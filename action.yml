@@ -1,0 +1,88 @@
+name: "Tinplate AI Safety, Secret & MCP Security Gate"
+description: "Scan diffs for leaked secrets, lint MCP server manifests for tool poisoning, audit regexes for ReDoS, or run any Tinplate /v1/* API in CI/CD."
+author: "Tinplate"
+branding:
+  icon: "shield"
+  color: "blue"
+inputs:
+  api_key:
+    description: "RapidAPI Key, Zyla API Key, or Direct Bearer Key"
+    required: true
+  provider:
+    description: "Authentication provider: rapidapi | zyla | bearer (default: rapidapi)"
+    required: false
+    default: "rapidapi"
+  rapidapi_host:
+    description: "RapidAPI host (e.g. log-redact-and-secret-scanner-api.p.rapidapi.com) when provider is rapidapi"
+    required: false
+    default: ""
+  base_url:
+    description: "Target base URL (default: https://api.tinplate.dev, or https://<rapidapi_host>)"
+    required: false
+    default: "https://api.tinplate.dev"
+  preset:
+    description: "Optional named preset (llm-ingest-safe, llm-output-safe, agent-pre-exec, eu-vendor-kyb)"
+    required: false
+    default: ""
+  endpoint:
+    description: "Target Tinplate endpoint (e.g. /v1/secret-scanner, /v1/mcp-manifest-linter, /v1/agent-code-guard)"
+    required: false
+    default: "/v1/secret-scanner"
+  payload:
+    description: "JSON string payload to send to the endpoint or preset"
+    required: true
+  fail_on_block:
+    description: "Exit with non-zero code when verdict is block or safe is false"
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - name: Execute Tinplate Security Gate
+      shell: bash
+      env:
+        TINPLATE_KEY: ${{ inputs.api_key }}
+        TINPLATE_PROVIDER: ${{ inputs.provider }}
+        TINPLATE_RAPID_HOST: ${{ inputs.rapidapi_host }}
+        TINPLATE_BASE_URL: ${{ inputs.base_url }}
+        TINPLATE_PRESET: ${{ inputs.preset }}
+        TINPLATE_ENDPOINT: ${{ inputs.endpoint }}
+        TINPLATE_PAYLOAD: ${{ inputs.payload }}
+        TINPLATE_FAIL_ON_BLOCK: ${{ inputs.fail_on_block }}
+      run: |
+        set -euo pipefail
+        BASE="${TINPLATE_BASE_URL%/}"
+        if [ "$TINPLATE_PROVIDER" = "rapidapi" ] && [ -n "$TINPLATE_RAPID_HOST" ] && [ "$BASE" = "https://api.tinplate.dev" ]; then
+          BASE="https://${TINPLATE_RAPID_HOST}"
+        fi
+        if [ -n "$TINPLATE_PRESET" ]; then
+          TARGET_URL="${BASE}/v1/presets/${TINPLATE_PRESET}?receipt=true"
+        else
+          TARGET_URL="${BASE}${TINPLATE_ENDPOINT}?receipt=true"
+        fi
+        AUTH_HEADERS=()
+        if [ "$TINPLATE_PROVIDER" = "rapidapi" ]; then
+          AUTH_HEADERS+=(-H "X-RapidAPI-Key: ${TINPLATE_KEY}")
+          if [ -n "$TINPLATE_RAPID_HOST" ]; then
+            AUTH_HEADERS+=(-H "X-RapidAPI-Host: ${TINPLATE_RAPID_HOST}")
+          fi
+        else
+          AUTH_HEADERS+=(-H "Authorization: Bearer ${TINPLATE_KEY}")
+        fi
+        RESPONSE=$(curl -sS -X POST "$TARGET_URL" \
+          -H "Content-Type: application/json" \
+          "${AUTH_HEADERS[@]}" \
+          -d "$TINPLATE_PAYLOAD")
+        echo "$RESPONSE"
+        if [ "$TINPLATE_FAIL_ON_BLOCK" = "true" ]; then
+          echo "$RESPONSE" | node -e '
+            const fs = require("fs");
+            const res = JSON.parse(fs.readFileSync(0, "utf8"));
+            if (!res.ok) process.exit(1);
+            const d = res.data || {};
+            if (d.verdict === "block" || d.safe === false || d.all_passed === false) {
+              console.error("Tinplate Gate blocked execution:", JSON.stringify(d));
+              process.exit(1);
+            }
+          '
+        fi
