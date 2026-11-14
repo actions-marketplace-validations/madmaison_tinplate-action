@@ -1,5 +1,5 @@
 name: "Tinplate AI Safety, Secret & MCP Security Gate"
-description: "Scan diffs for leaked secrets, lint MCP server manifests for tool poisoning, audit regexes for ReDoS, or run any Tinplate /v1/* API in CI/CD."
+description: "Scan diffs for leaked secrets, lint MCP manifests, audit AI code & regexes, or run any Tinplate /v1/* API in CI/CD."
 author: "Tinplate"
 branding:
   icon: "shield"
