@@ -25,7 +25,7 @@ Run **Tinplate**'s deterministic, zero-logging edge security & compliance checks
     fail_on_block: "true"
 ```
 
-### Example 2 — Agent Pre-Execution Preset via Direct / Zyla Bearer Key
+### Example 2 — Agent Pre-Execution Preset via Direct Polar (`tp_...`) or Zyla Bearer Key
 
 ```yaml
 - name: Tinplate Agent Security Gate
@@ -53,4 +53,7 @@ Run **Tinplate**'s deterministic, zero-logging edge security & compliance checks
 
 ## Links
 - Full 42-API Catalog: https://tinplate.dev/apis
-- SDKs & Docs: https://tinplate.dev/sdk
+- MCP Security & LLM Guardrail Bundles: https://tinplate.dev/solutions/mcp-security
+- SDKs, MCP Config Generator & Docs: https://tinplate.dev/sdk#config-generator
+- Postman v2.1 Collection: https://tinplate.dev/postman.json
+- Direct All-Access Keys (Polar.sh): https://tinplate.dev/pricing

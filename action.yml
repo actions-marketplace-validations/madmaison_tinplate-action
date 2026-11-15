@@ -57,6 +57,8 @@ runs:
         fi
         if [ -n "$TINPLATE_PRESET" ]; then
           TARGET_URL="${BASE}/v1/presets/${TINPLATE_PRESET}?receipt=true"
+        elif [[ "$TINPLATE_ENDPOINT" == *"?"* ]]; then
+          TARGET_URL="${BASE}${TINPLATE_ENDPOINT}&receipt=true"
         else
           TARGET_URL="${BASE}${TINPLATE_ENDPOINT}?receipt=true"
         fi
@@ -69,7 +71,7 @@ runs:
         else
           AUTH_HEADERS+=(-H "Authorization: Bearer ${TINPLATE_KEY}")
         fi
-        RESPONSE=$(curl -sS -X POST "$TARGET_URL" \
+        RESPONSE=$(curl -sS --fail-with-body --max-time 15 -X POST "$TARGET_URL" \
           -H "Content-Type: application/json" \
           "${AUTH_HEADERS[@]}" \
           -d "$TINPLATE_PAYLOAD")
