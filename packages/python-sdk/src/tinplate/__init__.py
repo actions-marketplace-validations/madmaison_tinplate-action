@@ -26,4 +26,4 @@ __all__ = [
     "as_pydantic_ai_tools",
     "guard_pydantic_ai_prompt",
 ]
-__version__ = "1.1.6"
+__version__ = "1.1.7"

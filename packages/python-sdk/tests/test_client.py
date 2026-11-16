@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.6")
+        self.assertEqual(__version__, "1.1.7")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
