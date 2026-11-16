@@ -1,0 +1,41 @@
+{
+  "name": "@tinplate/sdk",
+  "version": "1.1.5",
+  "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate 42-API AI Safety, Security & Compliance Edge Gateway.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "homepage": "https://tinplate.dev/sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madmaison/tinplate-action.git"
+  },
+  "bugs": {
+    "url": "https://github.com/madmaison/tinplate-action/issues",
+    "email": "support@tinplate.dev"
+  },
+  "keywords": [
+    "tinplate",
+    "ai-safety",
+    "prompt-injection",
+    "pii-redaction",
+    "mcp",
+    "peppol",
+    "guardrails"
+  ],
+  "license": "MIT"
+}
