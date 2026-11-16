@@ -32,9 +32,17 @@ inputs:
     description: "JSON string payload to send to the endpoint or preset"
     required: true
   fail_on_block:
-    description: "Exit with non-zero code when verdict is block or safe is false"
+    description: "Exit with non-zero code when verdict triggers policy failure"
     required: false
     default: "true"
+  fail_on:
+    description: "Failure threshold: block (default) or review (fails on review OR block)"
+    required: false
+    default: "block"
+  print_response:
+    description: "Print full JSON response body to workflow logs (default false to avoid exposing unredacted tokens/text)"
+    required: false
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -49,16 +57,41 @@ runs:
         TINPLATE_ENDPOINT: ${{ inputs.endpoint }}
         TINPLATE_PAYLOAD: ${{ inputs.payload }}
         TINPLATE_FAIL_ON_BLOCK: ${{ inputs.fail_on_block }}
+        TINPLATE_FAIL_ON: ${{ inputs.fail_on }}
+        TINPLATE_PRINT_RESPONSE: ${{ inputs.print_response }}
       run: |
         set -euo pipefail
+        if [ -n "${TINPLATE_KEY:-}" ]; then
+          echo "::add-mask::${TINPLATE_KEY}"
+        fi
         BASE="${TINPLATE_BASE_URL%/}"
         if [ "$TINPLATE_PROVIDER" = "rapidapi" ] && [ -n "$TINPLATE_RAPID_HOST" ] && [ "$BASE" = "https://api.tinplate.dev" ]; then
           BASE="https://${TINPLATE_RAPID_HOST}"
         fi
+        if [[ "$BASE" == *"@"* ]] || [[ "$BASE" =~ [[:space:]] ]]; then
+          echo "::error::Invalid base_url '${BASE}'" >&2
+          exit 1
+        fi
+        if [[ "$BASE" != https://* ]] && [[ ! "$BASE" =~ ^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$ ]]; then
+          echo "::error::Refusing non-HTTPS base_url '${BASE}' (only https:// or http://localhost / http://127.0.0.1 permitted)" >&2
+          exit 1
+        fi
         if [ -n "$TINPLATE_PRESET" ]; then
+          if [[ ! "$TINPLATE_PRESET" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Invalid preset '${TINPLATE_PRESET}'" >&2
+            exit 1
+          fi
           TARGET_URL="${BASE}/v1/presets/${TINPLATE_PRESET}?receipt=true"
         else
-          TARGET_URL="${BASE}${TINPLATE_ENDPOINT}?receipt=true"
+          if [[ "$TINPLATE_ENDPOINT" != /* ]] || [[ "$TINPLATE_ENDPOINT" == //* ]] || [[ "$TINPLATE_ENDPOINT" =~ [[:space:]] ]]; then
+            echo "::error::endpoint must start with '/' (got '${TINPLATE_ENDPOINT}')" >&2
+            exit 1
+          fi
+          if [[ "$TINPLATE_ENDPOINT" == *"?"* ]]; then
+            TARGET_URL="${BASE}${TINPLATE_ENDPOINT}&receipt=true"
+          else
+            TARGET_URL="${BASE}${TINPLATE_ENDPOINT}?receipt=true"
+          fi
         fi
         AUTH_HEADERS=()
         if [ "$TINPLATE_PROVIDER" = "rapidapi" ]; then
@@ -69,20 +102,41 @@ runs:
         else
           AUTH_HEADERS+=(-H "Authorization: Bearer ${TINPLATE_KEY}")
         fi
-        RESPONSE=$(curl -sS -X POST "$TARGET_URL" \
+        RESPONSE=$(curl -sS --fail-with-body --max-time 15 -X POST "$TARGET_URL" \
           -H "Content-Type: application/json" \
           "${AUTH_HEADERS[@]}" \
           -d "$TINPLATE_PAYLOAD")
-        echo "$RESPONSE"
-        if [ "$TINPLATE_FAIL_ON_BLOCK" = "true" ]; then
-          echo "$RESPONSE" | node -e '
-            const fs = require("fs");
-            const res = JSON.parse(fs.readFileSync(0, "utf8"));
-            if (!res.ok) process.exit(1);
-            const d = res.data || {};
-            if (d.verdict === "block" || d.safe === false || d.all_passed === false) {
-              console.error("Tinplate Gate blocked execution:", JSON.stringify(d));
+        if [ "$TINPLATE_PRINT_RESPONSE" = "true" ]; then
+          echo "$RESPONSE"
+        fi
+        echo "$RESPONSE" | node -e '
+          const fs = require("fs");
+          const res = JSON.parse(fs.readFileSync(0, "utf8"));
+          if (!res.ok) process.exit(1);
+          const d = res.data || {};
+          console.log(JSON.stringify({
+            ok: res.ok,
+            request_id: res.meta && res.meta.request_id,
+            verdict: d.verdict,
+            safe: d.safe,
+            valid: d.valid,
+            all_passed: d.all_passed,
+            risk_score: d.risk_score,
+          }));
+          if (process.env.TINPLATE_FAIL_ON_BLOCK === "true") {
+            const failOnReview = process.env.TINPLATE_FAIL_ON === "review";
+            const blocked =
+              d.verdict === "block" ||
+              (failOnReview && (d.verdict === "review" || d.verdict === "warn")) ||
+              d.safe === false ||
+              d.allowed === false ||
+              d.all_passed === false ||
+              d.passed === false ||
+              d.valid === false ||
+              d.blocked === true;
+            if (blocked) {
+              console.error("Tinplate Gate blocked execution:", JSON.stringify({ verdict: d.verdict, safe: d.safe, allowed: d.allowed, valid: d.valid, risk_score: d.risk_score }));
               process.exit(1);
             }
-          '
-        fi
+          }
+        '

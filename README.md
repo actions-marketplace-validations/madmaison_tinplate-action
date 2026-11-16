@@ -2,6 +2,11 @@
 
 Run **Tinplate**'s deterministic, zero-logging edge security & compliance checks directly in your GitHub Actions CI/CD pipelines.
 
+> **Official Public Repository & Issue Tracker:** This repository hosts `tinplate-action` and serves as the public GitHub repository and issue tracker for **[`@tinplate/sdk`](https://www.npmjs.com/package/@tinplate/sdk)** (TypeScript/JS), **[`tinplate`](https://pypi.org/project/tinplate/)** (Python), and the **[Hosted MCP Server](https://tinplate.dev/sdk#config-generator)** (`https://api.tinplate.dev/mcp`). Tinplate's Cloudflare Workers runtime monorepo (`edgeguard-gateway` / `edgeguard-web` / `edgeguard-fetcher`) is maintained privately.
+>
+> - **Support & Enterprise:** [`support@tinplate.dev`](mailto:support@tinplate.dev) ([tinplate.dev/support](https://tinplate.dev/support))
+> - **Private Security & PGP Disclosure:** Never file vulnerabilities as public GitHub issues — email [`security@tinplate.dev`](mailto:security@tinplate.dev) using our [PGP Public Key](https://tinplate.dev/.well-known/pgp-key.asc) ([Trust Center](https://tinplate.dev/security) · [`security.txt`](https://tinplate.dev/.well-known/security.txt)).
+
 ## Use Cases
 - **Secret Scanning (`/v1/secret-scanner`)**: Catch leaked API keys, tokens, PEM keys, and high-entropy credentials in PR diffs.
 - **MCP Server Manifest Linting (`/v1/mcp-manifest-linter`)**: Audit `mcp.json` / tool definitions for tool poisoning, "Lethal Trifecta" capability combinations, and SSRF risks.
@@ -25,7 +30,7 @@ Run **Tinplate**'s deterministic, zero-logging edge security & compliance checks
     fail_on_block: "true"
 ```
 
-### Example 2 — Agent Pre-Execution Preset via Direct / Zyla Bearer Key
+### Example 2 — Agent Pre-Execution Preset via Direct Polar (`tp_...`) or Zyla Bearer Key
 
 ```yaml
 - name: Tinplate Agent Security Gate
@@ -51,6 +56,18 @@ Run **Tinplate**'s deterministic, zero-logging edge security & compliance checks
 | `payload` | Yes | — | JSON string payload |
 | `fail_on_block` | No | `true` | Fail the workflow step when `verdict == "block"`, `safe == false`, or `all_passed == false` |
 
+## SDKs & Hosted MCP Server
+
+- **TypeScript / JavaScript (`npm install @tinplate/sdk`)**: Zero-dependency client (`v1.1.5`) for Node 18+, Cloudflare Workers, Deno, Bun, Vercel AI SDK, OpenAI, and Anthropic, including offline Ed25519/ES256 JWKS receipt verification (`verifyReceiptOffline()`).
+- **Python (`pip install tinplate`)**: Zero-dependency stdlib client (`v1.1.5`) with built-in adapters for LangChain, LlamaIndex, CrewAI, and PydanticAI.
+- **Streamable HTTP MCP (`https://api.tinplate.dev/mcp`)**: Exposes all 49 tools (42 APIs) with `Authorization: Bearer tp_...`.
+
 ## Links
-- Full 42-API Catalog: https://tinplate.dev/apis
-- SDKs & Docs: https://tinplate.dev/sdk
+- Full 42-API Catalog: https://tinplate.dev/#apis
+- MCP Security & LLM Guardrail Bundles: https://tinplate.dev/solutions/mcp-security
+- SDKs, MCP Config Generator & Docs: https://tinplate.dev/sdk#config-generator
+- Postman v2.1 Collection: https://tinplate.dev/postman.json
+- Direct All-Access Keys (Polar.sh): https://tinplate.dev/pricing
+- Security & Trust Center (OWASP Top 10, Ed25519 JWKS, PGP): https://tinplate.dev/security
+- Standard DPA & Sub-Processors: https://tinplate.dev/dpa
+- Support & Bug Tracker: [`support@tinplate.dev`](mailto:support@tinplate.dev) · [Issues](https://github.com/madmaison/tinplate-action/issues)
