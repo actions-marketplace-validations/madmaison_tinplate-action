@@ -127,7 +127,7 @@ runs:
             const failOnReview = process.env.TINPLATE_FAIL_ON === "review";
             const blocked =
               d.verdict === "block" ||
-              (failOnReview && d.verdict === "review") ||
+              (failOnReview && (d.verdict === "review" || d.verdict === "warn")) ||
               d.safe === false ||
               d.allowed === false ||
               d.all_passed === false ||
