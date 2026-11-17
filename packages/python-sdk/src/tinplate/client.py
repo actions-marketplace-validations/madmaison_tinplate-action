@@ -1,4 +1,4 @@
-"""Zero-dependency HTTP client for the Tinplate 42-API Edge Gateway."""
+"""Zero-dependency HTTP client for the Tinplate 32-API Edge Gateway."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+_SDK_VERSION = "1.1.8"
 
 _STDLIB_URLOPEN = urllib.request.urlopen
 _SCHEME_PREFIX_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
@@ -221,7 +223,10 @@ class TinplateClient:
         self.request_receipts = request_receipts
         self.timeout = timeout
         self.max_retries = max(0, max_retries)
-        self.headers: Dict[str, str] = {"Content-Type": "application/json"}
+        self.headers: Dict[str, str] = {
+            "Content-Type": "application/json",
+            "User-Agent": f"tinplate-python/{_SDK_VERSION}",
+        }
 
         if api_key:
             self.headers["Authorization"] = f"Bearer {api_key}"
@@ -648,36 +653,6 @@ class TinplateClient:
             signing_secret=signing_secret,
         )
 
-    def screen_sanctions(
-        self,
-        *,
-        entity_name: str,
-        entity_type: str = "any",
-        country_code: Optional[str] = None,
-        identifiers: Optional[Dict[str, Any]] = None,
-        custom_watchlist: Optional[List[Dict[str, Any]]] = None,
-        similarity_threshold: float = 0.84,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """41 — Sanctions, Watchlist & Embargo Entity Screener API."""
-        payload: Dict[str, Any] = {
-            "entity_name": entity_name,
-            "entity_type": entity_type,
-            "similarity_threshold": similarity_threshold,
-        }
-        if country_code is not None:
-            payload["country_code"] = country_code
-        if identifiers is not None:
-            payload["identifiers"] = identifiers
-        if custom_watchlist is not None:
-            payload["custom_watchlist"] = custom_watchlist
-        return self.call("/v1/sanctions-screener", payload, receipt=receipt, signing_secret=signing_secret)
-
-    def signup_fraud(self, **kwargs: Any) -> Dict[str, Any]:
-        """02 — Signup Fraud & Disposable Email Scoring API."""
-        return self._call_kwargs("/v1/signup-fraud", kwargs)
-
     def restore_pii(
         self,
         *,
@@ -693,10 +668,6 @@ class TinplateClient:
             receipt=receipt,
             signing_secret=signing_secret,
         )
-
-    def html_to_markdown(self, **kwargs: Any) -> Dict[str, Any]:
-        """04 — HTML-to-Markdown Converter API."""
-        return self._call_kwargs("/v1/html-to-markdown", kwargs)
 
     def validate_iban(
         self,
@@ -716,14 +687,13 @@ class TinplateClient:
         self,
         *,
         vat_number: str,
-        verify_vies: bool = False,
         receipt: Optional[bool] = None,
         signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """05 — EU VAT Number Validator API."""
+        """05 — EU VAT Number Format Validator API (offline syntax/checksum only)."""
         return self.call(
             "/v1/eu-vat-iban/vat",
-            {"vat_number": vat_number, "verify_vies": verify_vies},
+            {"vat_number": vat_number},
             receipt=receipt,
             signing_secret=signing_secret,
         )
@@ -731,10 +701,6 @@ class TinplateClient:
     def email_dns(self, **kwargs: Any) -> Dict[str, Any]:
         """06 — Email DNS & Deliverability Audit API."""
         return self._call_kwargs("/v1/email-dns", kwargs)
-
-    def security_headers(self, **kwargs: Any) -> Dict[str, Any]:
-        """07 — HTTP Security Headers Audit API."""
-        return self._call_kwargs("/v1/security-headers", kwargs)
 
     def ua_bot_parser(
         self,
@@ -816,10 +782,6 @@ class TinplateClient:
         """11 — JSON Schema Breaking-Change Diff API."""
         return self._call_kwargs("/v1/schema-diff", kwargs)
 
-    def verify_webhook(self, **kwargs: Any) -> Dict[str, Any]:
-        """12 — Webhook Signature Verifier API."""
-        return self._call_kwargs("/v1/webhook-verify", kwargs)
-
     def ssrf_firewall(self, **kwargs: Any) -> Dict[str, Any]:
         """13 — Outbound SSRF Firewall API."""
         return self._call_kwargs("/v1/ssrf-firewall", kwargs)
@@ -864,10 +826,6 @@ class TinplateClient:
         """19 — MCP Manifest Security Linter API."""
         return self._call_kwargs("/v1/mcp-manifest-linter", kwargs)
 
-    def validate_invoice(self, **kwargs: Any) -> Dict[str, Any]:
-        """20 — EU Invoice & EN 16931 Math Validator API."""
-        return self._call_kwargs("/v1/invoice-validator", kwargs)
-
     def normalize_url(self, **kwargs: Any) -> Dict[str, Any]:
         """21 — URL Normalizer & Tracking Stripper API."""
         return self._call_kwargs("/v1/url-normalizer", kwargs)
@@ -887,10 +845,6 @@ class TinplateClient:
     def sanitize_ics(self, **kwargs: Any) -> Dict[str, Any]:
         """25 — ICS Calendar Feed Sanitizer API."""
         return self._call_kwargs("/v1/ics-sanitizer", kwargs)
-
-    def analyze_robots_llms(self, **kwargs: Any) -> Dict[str, Any]:
-        """26 — robots.txt & llms.txt AI Policy Analyzer API."""
-        return self._call_kwargs("/v1/robots-llms-analyzer", kwargs)
 
     def judge_semver_lockfile(self, **kwargs: Any) -> Dict[str, Any]:
         """27 — Semver & Lockfile Risk Judge API."""
@@ -915,10 +869,6 @@ class TinplateClient:
     def guard_command_sql(self, **kwargs: Any) -> Dict[str, Any]:
         """32 — Shell Command & SQL Injection Guard API."""
         return self._call_kwargs("/v1/command-sql-guard", kwargs)
-
-    def validate_eu_id(self, **kwargs: Any) -> Dict[str, Any]:
-        """33 — EU Business & Tax ID Validator API."""
-        return self._call_kwargs("/v1/eu-id-validator", kwargs)
 
     def inspect_jwt_jwk(self, **kwargs: Any) -> Dict[str, Any]:
         """34 — JWT & JWK Security Inspector API."""
@@ -946,14 +896,6 @@ class TinplateClient:
     def clean_tabular_rag(self, **kwargs: Any) -> Dict[str, Any]:
         """38 — Tabular CSV/JSON RAG Cleaner API."""
         return self._call_kwargs("/v1/tabular-rag-cleaner", kwargs)
-
-    def peppol_ubl_invoice(self, **kwargs: Any) -> Dict[str, Any]:
-        """39 — Peppol BIS 3.0 UBL Invoice Converter API."""
-        return self._call_kwargs("/v1/peppol-ubl-invoice", kwargs)
-
-    def calculate_eu_vat(self, **kwargs: Any) -> Dict[str, Any]:
-        """40 — EU Cross-Border VAT Calculator API."""
-        return self._call_kwargs("/v1/eu-vat-calculator", kwargs)
 
     def guard_llm_turn(
         self,

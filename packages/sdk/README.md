@@ -1,6 +1,6 @@
 # @tinplate/sdk
 
-Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 42-API AI Safety, Security, and EU Compliance Edge Gateway (`https://api.tinplate.dev`).
+Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 32-API AI Safety, Security, and Format Validation Edge Gateway (`https://api.tinplate.dev`).
 
 Works in Node.js 18+, Cloudflare Workers, Deno, Bun, and Next.js Edge Runtime using standard `fetch`.
 
@@ -37,7 +37,7 @@ console.log(res.data.verdict, res.data.risk_score);
 ```ts
 const tinplate = new TinplateClient({
   apiKey: process.env.TINPLATE_API_KEY!,
-  requestReceipts: true, // attaches Ed25519 / ES256 (JWKS) or HMAC-SHA256 compliance receipts
+  requestReceipts: true, // attaches Ed25519 / ES256 (JWKS) or HMAC-SHA256 signed audit receipts
 });
 
 const healed = await tinplate.healJson({
@@ -83,7 +83,7 @@ const preset = await tinplate.preset("llm-ingest-safe", {
 - npm Package: https://www.npmjs.com/package/@tinplate/sdk
 - Python SDK (PyPI): https://pypi.org/project/tinplate/
 - Hosted MCP Server: https://api.tinplate.dev/mcp
-- Full API Catalog (42 APIs / 49 endpoints): https://tinplate.dev/#apis
+- Full API Catalog (32 APIs / 39 endpoints): https://tinplate.dev/#apis
 - Public Receipt Key Discovery (JWKS): https://api.tinplate.dev/.well-known/jwks.json
 - Interactive Live Sandbox: https://tinplate.dev/tools
 - SDK, MCP Config Generator & Framework Guides: https://tinplate.dev/sdk#config-generator

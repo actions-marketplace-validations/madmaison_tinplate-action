@@ -1,6 +1,6 @@
 # tinplate
 
-Zero-dependency Python SDK for the **Tinplate** 42-API AI Safety, Security, and EU Compliance Edge Gateway (`https://api.tinplate.dev`).
+Zero-dependency Python SDK for the **Tinplate** 32-API AI Safety, Security, and Format Validation Edge Gateway (`https://api.tinplate.dev`).
 
 Uses only the Python standard library (`urllib.request`, `json`) — works in Python 3.9+, FastAPI, LangChain, AWS Lambda, and scripts.
 
@@ -80,7 +80,7 @@ preset = client.preset("llm-ingest-safe", {
 - PyPI Package: https://pypi.org/project/tinplate/
 - TypeScript / JS SDK (npm): https://www.npmjs.com/package/@tinplate/sdk
 - Hosted MCP Server: https://api.tinplate.dev/mcp
-- Full API Catalog (42 APIs / 49 endpoints): https://tinplate.dev/#apis
+- Full API Catalog (32 APIs / 39 endpoints): https://tinplate.dev/#apis
 - Public Receipt Key Discovery (JWKS): https://api.tinplate.dev/.well-known/jwks.json
 - Interactive Live Sandbox: https://tinplate.dev/tools
 - SDK, MCP Config Generator & Framework Guides: https://tinplate.dev/sdk#config-generator

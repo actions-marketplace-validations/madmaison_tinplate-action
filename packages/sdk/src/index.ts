@@ -56,7 +56,7 @@ export interface TinplateClientOptions {
   rapidApiHost?: string;
   /** Zyla API Hub Bearer Key */
   zylaApiKey?: string;
-  /** Request cryptographic compliance receipts (Ed25519/ES256 via JWKS or HMAC-SHA256) on every call */
+  /** Request cryptographic signed audit receipts (Ed25519/ES256 via JWKS or HMAC-SHA256) on every call */
   requestReceipts?: boolean;
   /** Zero-retention per-call signing secret sent via X-Tinplate-Signing-Secret (for webhook/consent/receipt endpoints) */
   signingSecret?: string;
@@ -103,8 +103,7 @@ export interface TinplatePipelineStepResult {
 export type TinplatePresetId =
   | "llm-ingest-safe"
   | "llm-output-safe"
-  | "agent-pre-exec"
-  | "eu-vendor-kyb";
+  | "agent-pre-exec";
 
 function isLocalHostname(hostname: string): boolean {
   const h = hostname.toLowerCase();
@@ -256,7 +255,7 @@ export class TinplateClient {
       const res = await this.fetchImpl(url.toString(), {
         method,
         headers: reqHeaders,
-        redirect: "error",
+        redirect: "manual",
         ...(serializedBody !== undefined ? { body: serializedBody } : {}),
         ...(typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
           ? { signal: AbortSignal.timeout(this.timeoutMs) }
@@ -637,7 +636,7 @@ export class TinplateClient {
   }
 
   /**
-   * Execute a named 1-call enterprise policy bundle (e.g. 'llm-ingest-safe', 'agent-pre-exec', 'eu-vendor-kyb').
+   * Execute a named 1-call enterprise policy bundle (e.g. 'llm-ingest-safe', 'llm-output-safe', 'agent-pre-exec').
    */
   async preset(
     presetId: TinplatePresetId,
@@ -776,36 +775,6 @@ export class TinplateClient {
     }>("/v1/agent-code-guard", input, options);
   }
 
-  /** 41 — Sanctions, Watchlist & Embargo Entity Screener API */
-  screenSanctions(
-    input: {
-      entity_name: string;
-      entity_type?: "any" | "company" | "individual" | "vessel";
-      country_code?: string;
-      identifiers?: {
-        bic?: string;
-        lei?: string;
-        iban?: string;
-        crypto_address?: string;
-      };
-      custom_watchlist?: Array<{ id: string; name: string; list_source?: string }>;
-      similarity_threshold?: number;
-    },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call<{
-      clear: boolean;
-      verdict: "clear" | "review" | "block";
-      risk_score: number;
-      matches: unknown[];
-    }>("/v1/sanctions-screener", input, options);
-  }
-
-  /** 02 — Signup Fraud & Disposable Email Scoring API */
-  signupFraud(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/signup-fraud", input, options);
-  }
-
   /** 03 — PII Redactor Restore API */
   restorePii(
     input: { redacted_text: string; tokens: Record<string, string> },
@@ -814,18 +783,13 @@ export class TinplateClient {
     return this.call<{ restored_text: string }>("/v1/pii-redactor/restore", input, options);
   }
 
-  /** 04 — HTML-to-Markdown Converter API */
-  htmlToMarkdown(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/html-to-markdown", input, options);
-  }
-
   /** 05 — EU IBAN & BIC Validator API */
   validateIban(input: { iban: string; bic?: string }, options?: TinplateCallOptions) {
     return this.call("/v1/eu-vat-iban/iban", input, options);
   }
 
-  /** 05 — EU VAT Number Validator API */
-  validateVat(input: { vat_number: string; verify_vies?: boolean }, options?: TinplateCallOptions) {
+  /** 05 — EU VAT Number Format Validator API (offline syntax/checksum only) */
+  validateVat(input: { vat_number: string }, options?: TinplateCallOptions) {
     return this.call("/v1/eu-vat-iban/vat", input, options);
   }
 
@@ -846,11 +810,6 @@ export class TinplateClient {
     options?: TinplateCallOptions,
   ) {
     return this.call("/v1/email-dns", input, options);
-  }
-
-  /** 07 — HTTP Security Headers Audit API */
-  securityHeaders(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/security-headers", input, options);
   }
 
   /** 08 — User-Agent & AI Bot Parser API */
@@ -895,11 +854,6 @@ export class TinplateClient {
     options?: TinplateCallOptions,
   ) {
     return this.call("/v1/schema-diff", input, options);
-  }
-
-  /** 12 — Webhook Signature Verifier API */
-  verifyWebhook(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/webhook-verify", input, options);
   }
 
   /** 13 — Outbound SSRF Firewall API */
@@ -968,11 +922,6 @@ export class TinplateClient {
     return this.call("/v1/mcp-manifest-linter", input, options);
   }
 
-  /** 20 — EU Invoice & EN 16931 Math Validator API */
-  validateInvoice(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/invoice-validator", input, options);
-  }
-
   /** 21 — URL Normalizer & Tracking Stripper API */
   normalizeUrl(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/url-normalizer", input, options);
@@ -996,11 +945,6 @@ export class TinplateClient {
   /** 25 — ICS Calendar Feed Sanitizer API */
   sanitizeIcs(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/ics-sanitizer", input, options);
-  }
-
-  /** 26 — robots.txt & llms.txt AI Policy Analyzer API */
-  analyzeRobotsLlms(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/robots-llms-analyzer", input, options);
   }
 
   /** 27 — Semver & Lockfile Risk Judge API */
@@ -1033,11 +977,6 @@ export class TinplateClient {
     return this.call("/v1/command-sql-guard", input, options);
   }
 
-  /** 33 — EU Business & Tax ID Validator API */
-  validateEuId(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/eu-id-validator", input, options);
-  }
-
   /** 34 — JWT & JWK Security Inspector API */
   inspectJwtJwk(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/jwt-jwk-inspector", input, options);
@@ -1063,16 +1002,6 @@ export class TinplateClient {
   /** 38 — Tabular CSV/JSON RAG Cleaner API */
   cleanTabularRag(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/tabular-rag-cleaner", input, options);
-  }
-
-  /** 39 — Peppol BIS 3.0 UBL Invoice Converter API */
-  peppolUblInvoice(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/peppol-ubl-invoice", input, options);
-  }
-
-  /** 40 — EU Cross-Border VAT Calculator API */
-  calculateEuVat(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/eu-vat-calculator", input, options);
   }
 
   private async runInputGuardrail(input: {
