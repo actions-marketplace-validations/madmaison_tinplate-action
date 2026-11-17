@@ -85,4 +85,4 @@ preset = client.preset("llm-ingest-safe", {
 - Interactive Live Sandbox: https://tinplate.dev/tools
 - SDK, MCP Config Generator & Framework Guides: https://tinplate.dev/sdk#config-generator
 - Download Postman v2.1 Collection: https://tinplate.dev/postman.json
-- Error Handling: HTTP/network errors (`URLError`, `TimeoutError`, non-2xx JSON envelopes) raise `TinplateError` (`err.status`, `err.code`, `err.request_id`); pass `signing_secret=...` on `TinplateClient` or `client.call(..., signing_secret=...)` for zero-retention `X-Tinplate-Signing-Secret` calls.
+- Error Handling: HTTP/network errors (`URLError`, `TimeoutError`, non-2xx JSON envelopes) raise `TinplateError` (`err.status`, `err.code`, `err.request_id`); pass `signing_secret=...` on `TinplateClient` or `client.call(..., signing_secret=...)` for ephemeral (not stored by Tinplate) `X-Tinplate-Signing-Secret` calls.

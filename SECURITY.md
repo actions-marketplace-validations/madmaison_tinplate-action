@@ -1,12 +1,12 @@
 # Security Policy
 
-Tinplate builds stateless security, guardrail, and compliance micro-APIs. We welcome coordinated vulnerability reports from security researchers and users.
+Tinplate builds stateless security, guardrail, and EU/data validation micro-APIs. We welcome coordinated vulnerability reports from security researchers and users.
 
 ## Supported Versions
 
 | Component | Version | Security Fixes |
 | --- | --- | --- |
-| Edge Gateway, Web Portal & SSRF Fetcher Workers | `1.0.40` | Active |
+| Edge Gateway, Web Portal & SSRF Fetcher Workers | `1.0.41` | Active |
 | TypeScript SDK (`@tinplate/sdk`) | `1.1.8` | Active |
 | Python SDK (`tinplate`) | `1.1.8` | Active |
 
@@ -30,4 +30,4 @@ When reporting an issue, please include:
 
 **Safe Harbour:** Tinplate supports coordinated vulnerability disclosure and will not pursue legal action for good-faith, non-destructive research that follows these guidelines.
 
-We aim to acknowledge reports within **48 hours** and ship remediation within **7 days**.
+We aim to acknowledge reports within **1 business day** (best-effort target) and prioritize critical remediation as quickly as possible.
