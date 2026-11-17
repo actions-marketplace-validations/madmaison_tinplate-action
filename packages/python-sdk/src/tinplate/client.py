@@ -454,21 +454,47 @@ class TinplateClient:
         """List built-in enterprise pipeline presets (`GET /v1/presets`)."""
         return self._request("GET", "/v1/presets")
 
+    def _call_kwargs(self, endpoint: str, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        params = dict(kwargs)
+        receipt = params.pop("receipt", None)
+        signing_secret = params.pop("signing_secret", None)
+        return self.call(endpoint, params, receipt=receipt, signing_secret=signing_secret)
+
     def pipeline(
         self,
         steps: List[Dict[str, Any]],
         *,
         stop_on_block: bool = True,
+        parallel: bool = False,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Chain up to 5 Tinplate APIs in a single request with $steps piping."""
+        payload: Dict[str, Any] = {"stop_on_block": stop_on_block, "steps": steps}
+        if parallel:
+            payload["parallel"] = True
         return self.call(
             "/v1/pipeline",
-            {"stop_on_block": stop_on_block, "steps": steps},
+            payload,
+            receipt=receipt,
+            signing_secret=signing_secret,
         )
 
-    def preset(self, preset_id: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    def preset(
+        self,
+        preset_id: str,
+        input_data: Dict[str, Any],
+        *,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Execute a named 1-call enterprise policy bundle."""
-        return self.call(f"/v1/presets/{urllib.parse.quote(preset_id, safe='')}", input_data)
+        return self.call(
+            f"/v1/presets/{urllib.parse.quote(preset_id, safe='')}",
+            input_data,
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
     def prompt_guard(
         self,
@@ -478,6 +504,8 @@ class TinplateClient:
         sensitivity: str = "medium",
         block_threshold: Optional[int] = None,
         use_ai_judge: bool = False,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """01 — Prompt Injection Detection API."""
         payload: Dict[str, Any] = {
@@ -488,7 +516,7 @@ class TinplateClient:
         }
         if block_threshold is not None:
             payload["block_threshold"] = block_threshold
-        return self.call("/v1/prompt-guard", payload)
+        return self.call("/v1/prompt-guard", payload, receipt=receipt, signing_secret=signing_secret)
 
     def redact_pii(
         self,
@@ -497,6 +525,8 @@ class TinplateClient:
         locales: Optional[List[str]] = None,
         mode: str = "token",
         types: Optional[List[str]] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """03 — PII Redactor API."""
         payload: Dict[str, Any] = {"text": text, "mode": mode}
@@ -504,19 +534,21 @@ class TinplateClient:
             payload["locales"] = locales
         if types is not None:
             payload["types"] = types
-        return self.call("/v1/pii-redactor", payload)
+        return self.call("/v1/pii-redactor", payload, receipt=receipt, signing_secret=signing_secret)
 
     def heal_json(
         self,
         *,
         raw: str,
         schema: Optional[Dict[str, Any]] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """10 — Broken JSON & LLM Output Healer API."""
         payload: Dict[str, Any] = {"raw": raw}
         if schema is not None:
             payload["schema"] = schema
-        return self.call("/v1/json-heal", payload)
+        return self.call("/v1/json-heal", payload, receipt=receipt, signing_secret=signing_secret)
 
     def scan_secrets(
         self,
@@ -526,6 +558,8 @@ class TinplateClient:
         types: Optional[List[str]] = None,
         diff_only_added: bool = False,
         min_entropy: Optional[float] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """16 — Log Redact & Secret Scanner API."""
         payload: Dict[str, Any] = {
@@ -537,7 +571,7 @@ class TinplateClient:
             payload["types"] = types
         if min_entropy is not None:
             payload["min_entropy"] = min_entropy
-        return self.call("/v1/secret-scanner", payload)
+        return self.call("/v1/secret-scanner", payload, receipt=receipt, signing_secret=signing_secret)
 
     def guard_llm_output(
         self,
@@ -548,6 +582,8 @@ class TinplateClient:
         blocked_terms: Optional[List[str]] = None,
         allowed_link_domains: Optional[List[str]] = None,
         check_regulated_advice: Optional[bool] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """31 — LLM Output Guardrail & Leak Detector API."""
         payload: Dict[str, Any] = {"output": output}
@@ -561,7 +597,7 @@ class TinplateClient:
             payload["allowed_link_domains"] = allowed_link_domains
         if check_regulated_advice is not None:
             payload["check_regulated_advice"] = check_regulated_advice
-        return self.call("/v1/llm-output-guard", payload)
+        return self.call("/v1/llm-output-guard", payload, receipt=receipt, signing_secret=signing_secret)
 
     def guard_messages(
         self,
@@ -573,6 +609,8 @@ class TinplateClient:
         scan_secrets: bool = True,
         strip_email_quotes: bool = False,
         locales: Optional[List[str]] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """37 — LLM Chat Messages Policy Proxy API."""
         payload: Dict[str, Any] = {
@@ -585,7 +623,7 @@ class TinplateClient:
         }
         if locales is not None:
             payload["locales"] = locales
-        return self.call("/v1/llm-messages-guard", payload)
+        return self.call("/v1/llm-messages-guard", payload, receipt=receipt, signing_secret=signing_secret)
 
     def guard_agent_code(
         self,
@@ -594,6 +632,8 @@ class TinplateClient:
         language: str = "auto",
         allow_network: bool = False,
         allow_filesystem_write: bool = False,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """42 — AI-Generated Code & CI Workflow Sandbox Auditor API."""
         return self.call(
@@ -604,6 +644,8 @@ class TinplateClient:
                 "allow_network": allow_network,
                 "allow_filesystem_write": allow_filesystem_write,
             },
+            receipt=receipt,
+            signing_secret=signing_secret,
         )
 
     def screen_sanctions(
@@ -615,6 +657,8 @@ class TinplateClient:
         identifiers: Optional[Dict[str, Any]] = None,
         custom_watchlist: Optional[List[Dict[str, Any]]] = None,
         similarity_threshold: float = 0.84,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """41 — Sanctions, Watchlist & Embargo Entity Screener API."""
         payload: Dict[str, Any] = {
@@ -628,158 +672,261 @@ class TinplateClient:
             payload["identifiers"] = identifiers
         if custom_watchlist is not None:
             payload["custom_watchlist"] = custom_watchlist
-        return self.call("/v1/sanctions-screener", payload)
+        return self.call("/v1/sanctions-screener", payload, receipt=receipt, signing_secret=signing_secret)
 
     def signup_fraud(self, **kwargs: Any) -> Dict[str, Any]:
         """02 — Signup Fraud & Disposable Email Scoring API."""
-        return self.call("/v1/signup-fraud", kwargs)
+        return self._call_kwargs("/v1/signup-fraud", kwargs)
 
-    def restore_pii(self, *, redacted_text: str, tokens: Dict[str, str]) -> Dict[str, Any]:
+    def restore_pii(
+        self,
+        *,
+        redacted_text: str,
+        tokens: Dict[str, str],
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """03 — PII Redactor Restore API."""
-        return self.call("/v1/pii-redactor/restore", {"redacted_text": redacted_text, "tokens": tokens})
+        return self.call(
+            "/v1/pii-redactor/restore",
+            {"redacted_text": redacted_text, "tokens": tokens},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
     def html_to_markdown(self, **kwargs: Any) -> Dict[str, Any]:
         """04 — HTML-to-Markdown Converter API."""
-        return self.call("/v1/html-to-markdown", kwargs)
+        return self._call_kwargs("/v1/html-to-markdown", kwargs)
 
-    def validate_iban(self, *, iban: str, bic: Optional[str] = None) -> Dict[str, Any]:
+    def validate_iban(
+        self,
+        *,
+        iban: str,
+        bic: Optional[str] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """05 — EU IBAN & BIC Validator API."""
         payload: Dict[str, Any] = {"iban": iban}
         if bic is not None:
             payload["bic"] = bic
-        return self.call("/v1/eu-vat-iban/iban", payload)
+        return self.call("/v1/eu-vat-iban/iban", payload, receipt=receipt, signing_secret=signing_secret)
 
-    def validate_vat(self, *, vat_number: str, verify_vies: bool = False) -> Dict[str, Any]:
+    def validate_vat(
+        self,
+        *,
+        vat_number: str,
+        verify_vies: bool = False,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """05 — EU VAT Number Validator API."""
-        return self.call("/v1/eu-vat-iban/vat", {"vat_number": vat_number, "verify_vies": verify_vies})
+        return self.call(
+            "/v1/eu-vat-iban/vat",
+            {"vat_number": vat_number, "verify_vies": verify_vies},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
     def email_dns(self, **kwargs: Any) -> Dict[str, Any]:
         """06 — Email DNS & Deliverability Audit API."""
-        return self.call("/v1/email-dns", kwargs)
+        return self._call_kwargs("/v1/email-dns", kwargs)
 
     def security_headers(self, **kwargs: Any) -> Dict[str, Any]:
         """07 — HTTP Security Headers Audit API."""
-        return self.call("/v1/security-headers", kwargs)
+        return self._call_kwargs("/v1/security-headers", kwargs)
 
-    def ua_bot_parser(self, *, user_agent: str) -> Dict[str, Any]:
+    def ua_bot_parser(
+        self,
+        *,
+        user_agent: str,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """08 — User-Agent & AI Bot Parser API."""
-        return self.call("/v1/ua-bot-parser", {"user_agent": user_agent})
+        return self.call(
+            "/v1/ua-bot-parser",
+            {"user_agent": user_agent},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
-    def workdays_between(self, *, country: str, start_date: str, end_date: str) -> Dict[str, Any]:
+    def workdays_between(
+        self,
+        *,
+        country: str,
+        start_date: str,
+        end_date: str,
+        include_start: Optional[bool] = None,
+        include_end: Optional[bool] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """09 — EU Workdays Between Dates API."""
-        return self.call("/v1/workday-holiday/between", {"country": country, "start_date": start_date, "end_date": end_date})
+        payload: Dict[str, Any] = {
+            "country": country,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+        if include_start is not None:
+            payload["include_start"] = include_start
+        if include_end is not None:
+            payload["include_end"] = include_end
+        return self.call(
+            "/v1/workday-holiday/between",
+            payload,
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
-    def add_workdays(self, *, country: str, date: str, days: int) -> Dict[str, Any]:
+    def add_workdays(
+        self,
+        *,
+        country: str,
+        date: str,
+        days: int,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """09 — Add EU Workdays API."""
-        return self.call("/v1/workday-holiday/add", {"country": country, "date": date, "days": days})
+        return self.call(
+            "/v1/workday-holiday/add",
+            {"country": country, "date": date, "days": days},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
-    def is_workday(self, *, country: str, date: str) -> Dict[str, Any]:
+    def is_workday(
+        self,
+        *,
+        country: str,
+        date: str,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """09 — Check EU Workday API."""
-        return self.call("/v1/workday-holiday/is-workday", {"country": country, "date": date})
+        return self.call(
+            "/v1/workday-holiday/is-workday",
+            {"country": country, "date": date},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
     def schema_diff(self, **kwargs: Any) -> Dict[str, Any]:
         """11 — JSON Schema Breaking-Change Diff API."""
-        return self.call("/v1/schema-diff", kwargs)
+        return self._call_kwargs("/v1/schema-diff", kwargs)
 
     def verify_webhook(self, **kwargs: Any) -> Dict[str, Any]:
         """12 — Webhook Signature Verifier API."""
-        return self.call("/v1/webhook-verify", kwargs)
+        return self._call_kwargs("/v1/webhook-verify", kwargs)
 
     def ssrf_firewall(self, **kwargs: Any) -> Dict[str, Any]:
         """13 — Outbound SSRF Firewall API."""
-        return self.call("/v1/ssrf-firewall", kwargs)
+        return self._call_kwargs("/v1/ssrf-firewall", kwargs)
 
     def hallucination_diff(self, **kwargs: Any) -> Dict[str, Any]:
         """14 — RAG Hallucination & Citation Diff API."""
-        return self.call("/v1/hallucination-diff", kwargs)
+        return self._call_kwargs("/v1/hallucination-diff", kwargs)
 
     def issue_consent_token(self, **kwargs: Any) -> Dict[str, Any]:
         """15 — Consent Token Issuer API."""
-        return self.call("/v1/consent-tokens/issue", kwargs)
+        return self._call_kwargs("/v1/consent-tokens/issue", kwargs)
 
     def verify_consent_token(self, **kwargs: Any) -> Dict[str, Any]:
         """15 — Consent Token Verifier API."""
-        return self.call("/v1/consent-tokens/verify", kwargs)
+        return self._call_kwargs("/v1/consent-tokens/verify", kwargs)
 
-    def restore_secrets(self, *, redacted_text: str, tokens: Dict[str, str]) -> Dict[str, Any]:
+    def restore_secrets(
+        self,
+        *,
+        redacted_text: str,
+        tokens: Dict[str, str],
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """16 — Secret Scanner Restore API."""
-        return self.call("/v1/secret-scanner/restore", {"redacted_text": redacted_text, "tokens": tokens})
+        return self.call(
+            "/v1/secret-scanner/restore",
+            {"redacted_text": redacted_text, "tokens": tokens},
+            receipt=receipt,
+            signing_secret=signing_secret,
+        )
 
     def validate_tool_call(self, **kwargs: Any) -> Dict[str, Any]:
         """17 — LLM Tool-Call Validator & Repair API."""
-        return self.call("/v1/tool-call-validator", kwargs)
+        return self._call_kwargs("/v1/tool-call-validator", kwargs)
 
     def explain_cron(self, **kwargs: Any) -> Dict[str, Any]:
         """18 — Cron Expression Explainer API."""
-        return self.call("/v1/cron-explainer", kwargs)
+        return self._call_kwargs("/v1/cron-explainer", kwargs)
 
     def lint_mcp_manifest(self, **kwargs: Any) -> Dict[str, Any]:
         """19 — MCP Manifest Security Linter API."""
-        return self.call("/v1/mcp-manifest-linter", kwargs)
+        return self._call_kwargs("/v1/mcp-manifest-linter", kwargs)
 
     def validate_invoice(self, **kwargs: Any) -> Dict[str, Any]:
         """20 — EU Invoice & EN 16931 Math Validator API."""
-        return self.call("/v1/invoice-validator", kwargs)
+        return self._call_kwargs("/v1/invoice-validator", kwargs)
 
     def normalize_url(self, **kwargs: Any) -> Dict[str, Any]:
         """21 — URL Normalizer & Tracking Stripper API."""
-        return self.call("/v1/url-normalizer", kwargs)
+        return self._call_kwargs("/v1/url-normalizer", kwargs)
 
     def parse_locale_values(self, **kwargs: Any) -> Dict[str, Any]:
         """22 — Locale Number, Currency & Date Parser API."""
-        return self.call("/v1/locale-value-parser", kwargs)
+        return self._call_kwargs("/v1/locale-value-parser", kwargs)
 
     def validate_hu_business(self, **kwargs: Any) -> Dict[str, Any]:
         """23 — Hungarian Business & Tax ID Validator API."""
-        return self.call("/v1/hu-business-validator", kwargs)
+        return self._call_kwargs("/v1/hu-business-validator", kwargs)
 
     def generate_email_dns(self, **kwargs: Any) -> Dict[str, Any]:
         """24 — SPF/DKIM/DMARC Record Generator API."""
-        return self.call("/v1/email-dns-generator", kwargs)
+        return self._call_kwargs("/v1/email-dns-generator", kwargs)
 
     def sanitize_ics(self, **kwargs: Any) -> Dict[str, Any]:
         """25 — ICS Calendar Feed Sanitizer API."""
-        return self.call("/v1/ics-sanitizer", kwargs)
+        return self._call_kwargs("/v1/ics-sanitizer", kwargs)
 
     def analyze_robots_llms(self, **kwargs: Any) -> Dict[str, Any]:
         """26 — robots.txt & llms.txt AI Policy Analyzer API."""
-        return self.call("/v1/robots-llms-analyzer", kwargs)
+        return self._call_kwargs("/v1/robots-llms-analyzer", kwargs)
 
     def judge_semver_lockfile(self, **kwargs: Any) -> Dict[str, Any]:
         """27 — Semver & Lockfile Risk Judge API."""
-        return self.call("/v1/semver-lockfile-judge", kwargs)
+        return self._call_kwargs("/v1/semver-lockfile-judge", kwargs)
 
     def budget_prompt_cache(self, **kwargs: Any) -> Dict[str, Any]:
         """28 — LLM Prompt Cache & Token Budgeter API."""
-        return self.call("/v1/prompt-cache-budgeter", kwargs)
+        return self._call_kwargs("/v1/prompt-cache-budgeter", kwargs)
 
     def issue_action_receipt(self, **kwargs: Any) -> Dict[str, Any]:
         """29 — Agent Action Receipt Issuer API."""
-        return self.call("/v1/agent-action-receipts/issue", kwargs)
+        return self._call_kwargs("/v1/agent-action-receipts/issue", kwargs)
 
     def verify_action_receipt(self, **kwargs: Any) -> Dict[str, Any]:
         """29 — Agent Action Receipt Verifier API."""
-        return self.call("/v1/agent-action-receipts/verify", kwargs)
+        return self._call_kwargs("/v1/agent-action-receipts/verify", kwargs)
 
     def inspect_provenance(self, **kwargs: Any) -> Dict[str, Any]:
         """30 — Content Provenance & C2PA Inspector API."""
-        return self.call("/v1/content-provenance", kwargs)
+        return self._call_kwargs("/v1/content-provenance", kwargs)
 
     def guard_command_sql(self, **kwargs: Any) -> Dict[str, Any]:
         """32 — Shell Command & SQL Injection Guard API."""
-        return self.call("/v1/command-sql-guard", kwargs)
+        return self._call_kwargs("/v1/command-sql-guard", kwargs)
 
     def validate_eu_id(self, **kwargs: Any) -> Dict[str, Any]:
         """33 — EU Business & Tax ID Validator API."""
-        return self.call("/v1/eu-id-validator", kwargs)
+        return self._call_kwargs("/v1/eu-id-validator", kwargs)
 
     def inspect_jwt_jwk(self, **kwargs: Any) -> Dict[str, Any]:
         """34 — JWT & JWK Security Inspector API."""
-        return self.call("/v1/jwt-jwk-inspector", kwargs)
+        return self._call_kwargs("/v1/jwt-jwk-inspector", kwargs)
 
     def chunk_rag(self, **kwargs: Any) -> Dict[str, Any]:
         """35 — Markdown & Semantic RAG Chunker API."""
-        return self.call("/v1/rag-chunker", kwargs)
+        return self._call_kwargs("/v1/rag-chunker", kwargs)
 
     def analyze_regex_safety(
         self,
@@ -787,24 +934,26 @@ class TinplateClient:
         pattern: str,
         flags: str = "",
         test_strings: Optional[List[str]] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """36 — Regex ReDoS Safety Analyzer API."""
         payload: Dict[str, Any] = {"pattern": pattern, "flags": flags}
         if test_strings is not None:
             payload["test_strings"] = test_strings
-        return self.call("/v1/regex-safety", payload)
+        return self.call("/v1/regex-safety", payload, receipt=receipt, signing_secret=signing_secret)
 
     def clean_tabular_rag(self, **kwargs: Any) -> Dict[str, Any]:
         """38 — Tabular CSV/JSON RAG Cleaner API."""
-        return self.call("/v1/tabular-rag-cleaner", kwargs)
+        return self._call_kwargs("/v1/tabular-rag-cleaner", kwargs)
 
     def peppol_ubl_invoice(self, **kwargs: Any) -> Dict[str, Any]:
         """39 — Peppol BIS 3.0 UBL Invoice Converter API."""
-        return self.call("/v1/peppol-ubl-invoice", kwargs)
+        return self._call_kwargs("/v1/peppol-ubl-invoice", kwargs)
 
     def calculate_eu_vat(self, **kwargs: Any) -> Dict[str, Any]:
         """40 — EU Cross-Border VAT Calculator API."""
-        return self.call("/v1/eu-vat-calculator", kwargs)
+        return self._call_kwargs("/v1/eu-vat-calculator", kwargs)
 
     def guard_llm_turn(
         self,
@@ -814,8 +963,10 @@ class TinplateClient:
         locales: Optional[List[str]] = None,
         sensitivity: str = "medium",
         block_on_review: bool = False,
+        block_on_flag: bool = False,
     ) -> Dict[str, Any]:
         """Run Prompt Guard + PII Redactor before `generate`, then guard LLM output."""
+        should_block_review = block_on_review or block_on_flag
         pre = self.pipeline([
             {
                 "id": "prompt",
@@ -832,7 +983,7 @@ class TinplateClient:
             pre,
             prompt_id="prompt",
             pii_id="pii",
-            block_on_review=block_on_review,
+            block_on_review=should_block_review,
         )
 
         if blocked:
@@ -847,12 +998,18 @@ class TinplateClient:
         output_blocked = (
             out_data.get("safe") is False
             or out_verdict == "block"
-            or (block_on_review and out_verdict == "review")
+            or (should_block_review and out_verdict == "review")
         )
+        safe_output: Optional[str] = None
+        if not output_blocked:
+            if out_verdict == "sanitize" and isinstance(out_data.get("sanitized_output"), str):
+                safe_output = out_data["sanitized_output"]
+            else:
+                safe_output = raw_output
         return {
             "blocked": output_blocked,
-            "verdict": str(out_verdict) if output_blocked and isinstance(out_verdict, str) else verdict,
+            "verdict": str(out_verdict) if (output_blocked or out_verdict == "sanitize") and isinstance(out_verdict, str) else verdict,
             "redacted_prompt": redacted_prompt,
-            "output": None if output_blocked else raw_output,
+            "output": safe_output,
             "output_guard": out_data,
         }

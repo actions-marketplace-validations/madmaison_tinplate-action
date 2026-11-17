@@ -36,6 +36,13 @@ export interface VerifyReceiptOfflineResult {
   payload?: Record<string, unknown>;
 }
 
+export interface TinplateCallOptions {
+  /** Override client-level requestReceipts for this call */
+  receipt?: boolean;
+  /** Per-call signing secret header (X-Tinplate-Signing-Secret) */
+  signingSecret?: string;
+}
+
 export interface TinplateClientOptions {
   /** Base gateway URL (defaults to https://api.tinplate.dev) */
   baseUrl?: string;
@@ -378,7 +385,7 @@ export class TinplateClient {
   async call<T = Record<string, unknown>>(
     endpoint: string,
     body: Record<string, unknown>,
-    options?: { receipt?: boolean; signingSecret?: string },
+    options?: TinplateCallOptions,
   ): Promise<TinplateEnvelope<T>> {
     return this.requestWithRetry<T>("POST", endpoint, body, options);
   }
@@ -605,6 +612,7 @@ export class TinplateClient {
   async pipeline(
     steps: TinplatePipelineStep[],
     stopOnBlock = true,
+    options?: TinplateCallOptions & { parallel?: boolean },
   ): Promise<
     TinplateEnvelope<{
       all_passed: boolean;
@@ -617,10 +625,15 @@ export class TinplateClient {
       steps?: TinplatePipelineStepResult[];
     }>
   > {
-    return this.call("/v1/pipeline", {
-      stop_on_block: stopOnBlock,
-      steps,
-    });
+    return this.call(
+      "/v1/pipeline",
+      {
+        stop_on_block: stopOnBlock,
+        ...(options?.parallel !== undefined ? { parallel: options.parallel } : {}),
+        steps,
+      },
+      options,
+    );
   }
 
   /**
@@ -629,371 +642,437 @@ export class TinplateClient {
   async preset(
     presetId: TinplatePresetId,
     input: Record<string, unknown>,
+    options?: TinplateCallOptions,
   ): Promise<TinplateEnvelope> {
-    return this.call(`/v1/presets/${encodeURIComponent(presetId)}`, input);
+    return this.call(`/v1/presets/${encodeURIComponent(presetId)}`, input, options);
   }
 
   /** 01 — Prompt Injection Detection API */
-  promptGuard(input: {
-    text: string;
-    context?: "user_input" | "rag_chunk" | "tool_output" | "llm_output";
-    sensitivity?: "low" | "medium" | "high";
-    block_threshold?: number;
-    use_ai_judge?: boolean;
-  }) {
+  promptGuard(
+    input: {
+      text: string;
+      context?: "user_input" | "rag_document" | "tool_output" | "llm_output";
+      sensitivity?: "low" | "medium" | "high";
+      block_threshold?: number;
+      use_ai_judge?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       verdict: "allow" | "review" | "block";
       risk_score: number;
       blocked: boolean;
       signals: unknown[];
-    }>("/v1/prompt-guard", input);
+    }>("/v1/prompt-guard", input, options);
   }
 
   /** 03 — PII Redactor API */
-  redactPii(input: {
-    text: string;
-    locales?: Array<"GLOBAL" | "EU" | "HU">;
-    mode?: "token" | "mask";
-    types?: string[];
-  }) {
+  redactPii(
+    input: {
+      text: string;
+      locales?: Array<"GLOBAL" | "EU" | "HU">;
+      mode?: "token" | "mask";
+      types?: string[];
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       redacted_text: string;
       total_redacted: number;
       tokens: Record<string, string>;
-    }>("/v1/pii-redactor", input);
+    }>("/v1/pii-redactor", input, options);
   }
 
   /** 10 — Broken JSON & LLM Output Healer API */
-  healJson<T = unknown>(input: {
-    raw: string;
-    schema?: Record<string, unknown>;
-  }) {
+  healJson<T = unknown>(
+    input: {
+      raw: string;
+      schema?: Record<string, unknown>;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       valid: boolean;
       data: T;
       healed_json: string | null;
       repairs: string[];
-    }>("/v1/json-heal", input);
+    }>("/v1/json-heal", input, options);
   }
 
   /** 16 — Log Redact & Secret Scanner API */
-  scanSecrets(input: {
-    text: string;
-    mode?: "token" | "mask" | "partial";
-    types?: string[];
-    diff_only_added?: boolean;
-    min_entropy?: number;
-  }) {
+  scanSecrets(
+    input: {
+      text: string;
+      mode?: "token" | "mask" | "partial";
+      types?: string[];
+      diff_only_added?: boolean;
+      min_entropy?: number;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       redacted_text: string;
       total_secrets: number;
       verdict: "allow" | "warn" | "block";
       findings: unknown[];
-    }>("/v1/secret-scanner", input);
+    }>("/v1/secret-scanner", input, options);
   }
 
   /** 31 — LLM Output Guardrail & Leak Detector API */
-  guardLlmOutput(input: {
-    output: string;
-    system_prompt?: string;
-    canary_tokens?: string[];
-    blocked_terms?: string[];
-    allowed_link_domains?: string[];
-    check_regulated_advice?: boolean;
-  }) {
+  guardLlmOutput(
+    input: {
+      output: string;
+      system_prompt?: string;
+      canary_tokens?: string[];
+      blocked_terms?: string[];
+      allowed_link_domains?: string[];
+      check_regulated_advice?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       verdict: "allow" | "sanitize" | "block";
       safe: boolean;
       sanitized_output: string;
-    }>("/v1/llm-output-guard", input);
+    }>("/v1/llm-output-guard", input, options);
   }
 
   /** 37 — LLM Chat Messages Policy Proxy API */
-  guardMessages(input: {
-    messages: Array<Record<string, unknown>>;
-    sensitivity?: "low" | "medium" | "high";
-    check_prompt_injection?: boolean;
-    redact_pii?: boolean;
-    scan_secrets?: boolean;
-    strip_email_quotes?: boolean;
-    locales?: Array<"GLOBAL" | "EU" | "HU">;
-  }) {
+  guardMessages(
+    input: {
+      messages: Array<Record<string, unknown>>;
+      sensitivity?: "low" | "medium" | "high";
+      check_prompt_injection?: boolean;
+      redact_pii?: boolean;
+      scan_secrets?: boolean;
+      strip_email_quotes?: boolean;
+      locales?: Array<"GLOBAL" | "EU" | "HU">;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       verdict: "allow" | "review" | "block";
       safe: boolean;
       messages: Array<Record<string, unknown>>;
       tokens: Record<string, string>;
-    }>("/v1/llm-messages-guard", input);
+    }>("/v1/llm-messages-guard", input, options);
   }
 
   /** 42 — AI-Generated Code & CI Workflow Sandbox Auditor API */
-  guardAgentCode(input: {
-    code: string;
-    language?: "auto" | "python" | "javascript" | "typescript" | "github_actions_yaml" | "bash";
-    allow_network?: boolean;
-    allow_filesystem_write?: boolean;
-  }) {
+  guardAgentCode(
+    input: {
+      code: string;
+      language?: "auto" | "python" | "javascript" | "typescript" | "github_actions_yaml" | "bash";
+      allow_network?: boolean;
+      allow_filesystem_write?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       verdict: "allow" | "review" | "block";
       safe: boolean;
       risk_score: number;
       findings: unknown[];
-    }>("/v1/agent-code-guard", input);
+    }>("/v1/agent-code-guard", input, options);
   }
 
   /** 41 — Sanctions, Watchlist & Embargo Entity Screener API */
-  screenSanctions(input: {
-    entity_name: string;
-    entity_type?: "any" | "company" | "individual" | "vessel";
-    country_code?: string;
-    identifiers?: {
-      bic?: string;
-      lei?: string;
-      iban?: string;
-      crypto_address?: string;
-    };
-    custom_watchlist?: Array<{ id: string; name: string; list_source?: string }>;
-    similarity_threshold?: number;
-  }) {
+  screenSanctions(
+    input: {
+      entity_name: string;
+      entity_type?: "any" | "company" | "individual" | "vessel";
+      country_code?: string;
+      identifiers?: {
+        bic?: string;
+        lei?: string;
+        iban?: string;
+        crypto_address?: string;
+      };
+      custom_watchlist?: Array<{ id: string; name: string; list_source?: string }>;
+      similarity_threshold?: number;
+    },
+    options?: TinplateCallOptions,
+  ) {
     return this.call<{
       clear: boolean;
       verdict: "clear" | "review" | "block";
       risk_score: number;
       matches: unknown[];
-    }>("/v1/sanctions-screener", input);
+    }>("/v1/sanctions-screener", input, options);
   }
 
   /** 02 — Signup Fraud & Disposable Email Scoring API */
-  signupFraud(input: Record<string, unknown>) {
-    return this.call("/v1/signup-fraud", input);
+  signupFraud(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/signup-fraud", input, options);
   }
 
   /** 03 — PII Redactor Restore API */
-  restorePii(input: { redacted_text: string; tokens: Record<string, string> }) {
-    return this.call<{ restored_text: string }>("/v1/pii-redactor/restore", input);
+  restorePii(
+    input: { redacted_text: string; tokens: Record<string, string> },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{ restored_text: string }>("/v1/pii-redactor/restore", input, options);
   }
 
   /** 04 — HTML-to-Markdown Converter API */
-  htmlToMarkdown(input: Record<string, unknown>) {
-    return this.call("/v1/html-to-markdown", input);
+  htmlToMarkdown(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/html-to-markdown", input, options);
   }
 
   /** 05 — EU IBAN & BIC Validator API */
-  validateIban(input: { iban: string; bic?: string }) {
-    return this.call("/v1/eu-vat-iban/iban", input);
+  validateIban(input: { iban: string; bic?: string }, options?: TinplateCallOptions) {
+    return this.call("/v1/eu-vat-iban/iban", input, options);
   }
 
   /** 05 — EU VAT Number Validator API */
-  validateVat(input: { vat_number: string; verify_vies?: boolean }) {
-    return this.call("/v1/eu-vat-iban/vat", input);
+  validateVat(input: { vat_number: string; verify_vies?: boolean }, options?: TinplateCallOptions) {
+    return this.call("/v1/eu-vat-iban/vat", input, options);
   }
 
   /** 06 — Email DNS & Deliverability Audit API */
-  emailDns(input: { domain: string; dkim_selectors?: string[] }) {
-    return this.call("/v1/email-dns", input);
+  emailDns(
+    input: {
+      domain: string;
+      dkim_selectors?: string[];
+      records?: {
+        mx?: string[];
+        txt?: string[];
+        dmarc?: string[];
+        dkim?: Record<string, string[]>;
+        mta_sts?: string[];
+        bimi?: string[];
+      };
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/email-dns", input, options);
   }
 
   /** 07 — HTTP Security Headers Audit API */
-  securityHeaders(input: Record<string, unknown>) {
-    return this.call("/v1/security-headers", input);
+  securityHeaders(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/security-headers", input, options);
   }
 
   /** 08 — User-Agent & AI Bot Parser API */
-  uaBotParser(input: { user_agent: string }) {
-    return this.call("/v1/ua-bot-parser", input);
+  uaBotParser(input: { user_agent: string }, options?: TinplateCallOptions) {
+    return this.call("/v1/ua-bot-parser", input, options);
   }
 
   /** 09 — EU Workdays Between Dates API */
-  workdaysBetween(input: {
-    country: string;
-    start_date: string;
-    end_date: string;
-    include_start?: boolean;
-    include_end?: boolean;
-  }) {
-    return this.call("/v1/workday-holiday/between", input);
+  workdaysBetween(
+    input: {
+      country: string;
+      start_date: string;
+      end_date: string;
+      include_start?: boolean;
+      include_end?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/workday-holiday/between", input, options);
   }
 
   /** 09 — Add EU Workdays API */
-  addWorkdays(input: { country: string; date: string; days: number }) {
-    return this.call("/v1/workday-holiday/add", input);
+  addWorkdays(
+    input: { country: string; date: string; days: number },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/workday-holiday/add", input, options);
   }
 
   /** 09 — Check EU Workday API */
-  isWorkday(input: { country: string; date: string }) {
-    return this.call("/v1/workday-holiday/is-workday", input);
+  isWorkday(input: { country: string; date: string }, options?: TinplateCallOptions) {
+    return this.call("/v1/workday-holiday/is-workday", input, options);
   }
 
   /** 11 — JSON Schema Breaking-Change Diff API */
-  schemaDiff(input: {
-    before: Record<string, unknown>;
-    after: Record<string, unknown>;
-    mode?: "auto" | "json_schema" | "openapi";
-  }) {
-    return this.call("/v1/schema-diff", input);
+  schemaDiff(
+    input: {
+      before: Record<string, unknown>;
+      after: Record<string, unknown>;
+      mode?: "auto" | "json_schema" | "openapi";
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/schema-diff", input, options);
   }
 
   /** 12 — Webhook Signature Verifier API */
-  verifyWebhook(input: Record<string, unknown>) {
-    return this.call("/v1/webhook-verify", input);
+  verifyWebhook(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/webhook-verify", input, options);
   }
 
   /** 13 — Outbound SSRF Firewall API */
-  ssrfFirewall(input: {
-    url: string;
-    check_dns?: boolean;
-    inspect_redirects?: boolean;
-  }) {
-    return this.call("/v1/ssrf-firewall", input);
+  ssrfFirewall(
+    input: {
+      url: string;
+      check_dns?: boolean;
+      inspect_redirects?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/ssrf-firewall", input, options);
   }
 
   /** 14 — RAG Hallucination & Citation Diff API */
-  hallucinationDiff(input: {
-    answer: string;
-    sources: string[];
-    strictness?: "lenient" | "balanced" | "strict";
-    use_ai_judge?: boolean;
-  }) {
-    return this.call("/v1/hallucination-diff", input);
+  hallucinationDiff(
+    input: {
+      answer: string;
+      sources: string[];
+      strictness?: "lenient" | "balanced" | "strict";
+      use_ai_judge?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/hallucination-diff", input, options);
   }
 
   /** 15 — Consent Token Issuer API */
-  issueConsentToken(input: Record<string, unknown>) {
-    return this.call("/v1/consent-tokens/issue", input);
+  issueConsentToken(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/consent-tokens/issue", input, options);
   }
 
   /** 15 — Consent Token Verifier API */
-  verifyConsentToken(input: Record<string, unknown>) {
-    return this.call("/v1/consent-tokens/verify", input);
+  verifyConsentToken(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/consent-tokens/verify", input, options);
   }
 
   /** 16 — Secret Scanner Restore API */
-  restoreSecrets(input: { redacted_text: string; tokens: Record<string, string> }) {
-    return this.call("/v1/secret-scanner/restore", input);
+  restoreSecrets(
+    input: { redacted_text: string; tokens: Record<string, string> },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/secret-scanner/restore", input, options);
   }
 
   /** 17 — LLM Tool-Call Validator & Repair API */
-  validateToolCall(input: Record<string, unknown>) {
-    return this.call("/v1/tool-call-validator", input);
+  validateToolCall(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/tool-call-validator", input, options);
   }
 
   /** 18 — Cron Expression Explainer API */
-  explainCron(input: {
-    expression: string;
-    timezone?: string;
-    count?: number;
-    from_time?: string;
-  }) {
-    return this.call("/v1/cron-explainer", input);
+  explainCron(
+    input: {
+      expression: string;
+      timezone?: string;
+      count?: number;
+      from_time?: string;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/cron-explainer", input, options);
   }
 
   /** 19 — MCP Manifest Security Linter API */
-  lintMcpManifest(input: Record<string, unknown>) {
-    return this.call("/v1/mcp-manifest-linter", input);
+  lintMcpManifest(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/mcp-manifest-linter", input, options);
   }
 
   /** 20 — EU Invoice & EN 16931 Math Validator API */
-  validateInvoice(input: Record<string, unknown>) {
-    return this.call("/v1/invoice-validator", input);
+  validateInvoice(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/invoice-validator", input, options);
   }
 
   /** 21 — URL Normalizer & Tracking Stripper API */
-  normalizeUrl(input: Record<string, unknown>) {
-    return this.call("/v1/url-normalizer", input);
+  normalizeUrl(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/url-normalizer", input, options);
   }
 
   /** 22 — Locale Number, Currency & Date Parser API */
-  parseLocaleValues(input: Record<string, unknown>) {
-    return this.call("/v1/locale-value-parser", input);
+  parseLocaleValues(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/locale-value-parser", input, options);
   }
 
   /** 23 — Hungarian Business & Tax ID Validator API */
-  validateHuBusiness(input: Record<string, unknown>) {
-    return this.call("/v1/hu-business-validator", input);
+  validateHuBusiness(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/hu-business-validator", input, options);
   }
 
   /** 24 — SPF/DKIM/DMARC Record Generator API */
-  generateEmailDns(input: Record<string, unknown>) {
-    return this.call("/v1/email-dns-generator", input);
+  generateEmailDns(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/email-dns-generator", input, options);
   }
 
   /** 25 — ICS Calendar Feed Sanitizer API */
-  sanitizeIcs(input: Record<string, unknown>) {
-    return this.call("/v1/ics-sanitizer", input);
+  sanitizeIcs(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/ics-sanitizer", input, options);
   }
 
   /** 26 — robots.txt & llms.txt AI Policy Analyzer API */
-  analyzeRobotsLlms(input: Record<string, unknown>) {
-    return this.call("/v1/robots-llms-analyzer", input);
+  analyzeRobotsLlms(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/robots-llms-analyzer", input, options);
   }
 
   /** 27 — Semver & Lockfile Risk Judge API */
-  judgeSemverLockfile(input: Record<string, unknown>) {
-    return this.call("/v1/semver-lockfile-judge", input);
+  judgeSemverLockfile(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/semver-lockfile-judge", input, options);
   }
 
   /** 28 — LLM Prompt Cache & Token Budgeter API */
-  budgetPromptCache(input: Record<string, unknown>) {
-    return this.call("/v1/prompt-cache-budgeter", input);
+  budgetPromptCache(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/prompt-cache-budgeter", input, options);
   }
 
   /** 29 — Agent Action Receipt Issuer API */
-  issueActionReceipt(input: Record<string, unknown>) {
-    return this.call("/v1/agent-action-receipts/issue", input);
+  issueActionReceipt(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/agent-action-receipts/issue", input, options);
   }
 
   /** 29 — Agent Action Receipt Verifier API */
-  verifyActionReceipt(input: Record<string, unknown>) {
-    return this.call("/v1/agent-action-receipts/verify", input);
+  verifyActionReceipt(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/agent-action-receipts/verify", input, options);
   }
 
   /** 30 — Content Provenance & C2PA Inspector API */
-  inspectProvenance(input: Record<string, unknown>) {
-    return this.call("/v1/content-provenance", input);
+  inspectProvenance(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/content-provenance", input, options);
   }
 
   /** 32 — Shell Command & SQL Injection Guard API */
-  guardCommandSql(input: Record<string, unknown>) {
-    return this.call("/v1/command-sql-guard", input);
+  guardCommandSql(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/command-sql-guard", input, options);
   }
 
   /** 33 — EU Business & Tax ID Validator API */
-  validateEuId(input: Record<string, unknown>) {
-    return this.call("/v1/eu-id-validator", input);
+  validateEuId(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/eu-id-validator", input, options);
   }
 
   /** 34 — JWT & JWK Security Inspector API */
-  inspectJwtJwk(input: Record<string, unknown>) {
-    return this.call("/v1/jwt-jwk-inspector", input);
+  inspectJwtJwk(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/jwt-jwk-inspector", input, options);
   }
 
   /** 35 — Markdown & Semantic RAG Chunker API */
-  chunkRag(input: Record<string, unknown>) {
-    return this.call("/v1/rag-chunker", input);
+  chunkRag(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/rag-chunker", input, options);
   }
 
   /** 36 — Regex ReDoS Safety Analyzer API */
-  analyzeRegexSafety(input: {
-    pattern: string;
-    flags?: string;
-    test_strings?: string[];
-  }) {
-    return this.call("/v1/regex-safety", input);
+  analyzeRegexSafety(
+    input: {
+      pattern: string;
+      flags?: string;
+      test_strings?: string[];
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/regex-safety", input, options);
   }
 
   /** 38 — Tabular CSV/JSON RAG Cleaner API */
-  cleanTabularRag(input: Record<string, unknown>) {
-    return this.call("/v1/tabular-rag-cleaner", input);
+  cleanTabularRag(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/tabular-rag-cleaner", input, options);
   }
 
   /** 39 — Peppol BIS 3.0 UBL Invoice Converter API */
-  peppolUblInvoice(input: Record<string, unknown>) {
-    return this.call("/v1/peppol-ubl-invoice", input);
+  peppolUblInvoice(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/peppol-ubl-invoice", input, options);
   }
 
   /** 40 — EU Cross-Border VAT Calculator API */
-  calculateEuVat(input: Record<string, unknown>) {
-    return this.call("/v1/eu-vat-calculator", input);
+  calculateEuVat(input: Record<string, unknown>, options?: TinplateCallOptions) {
+    return this.call("/v1/eu-vat-calculator", input, options);
   }
 
   private async runInputGuardrail(input: {
@@ -1123,11 +1202,17 @@ export class TinplateClient {
     const rawOutput = await input.generate(redactedPrompt);
     const outRes = await this.guardLlmOutput({ output: rawOutput });
     const outputBlocked = isOutputBlocked(outRes.data, blockOnReview);
+    const safeOutput =
+      outputBlocked
+        ? null
+        : outRes.data.verdict === "sanitize" && typeof outRes.data.sanitized_output === "string"
+          ? outRes.data.sanitized_output
+          : rawOutput;
     return {
       blocked: outputBlocked,
-      verdict: outputBlocked ? String(outRes.data.verdict ?? "block") : verdict,
+      verdict: outputBlocked ? String(outRes.data.verdict ?? "block") : String(outRes.data.verdict === "sanitize" ? "sanitize" : verdict),
       redactedPrompt,
-      output: outputBlocked ? null : rawOutput,
+      output: safeOutput,
       outputGuard: outRes.data as Record<string, unknown>,
     };
   }

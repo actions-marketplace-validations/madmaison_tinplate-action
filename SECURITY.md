@@ -6,9 +6,9 @@ Tinplate builds stateless security, guardrail, and compliance micro-APIs. We wel
 
 | Component | Version | Security Fixes |
 | --- | --- | --- |
-| Edge Gateway & Web (`edgeguard-gateway`, `edgeguard-web`, `edgeguard-fetcher`) | `1.0.36` | Active |
-| TypeScript SDK (`@tinplate/sdk`) | `1.1.5` | Active |
-| Python SDK (`tinplate`) | `1.1.5` | Active |
+| Edge Gateway & Web (`edgeguard-gateway`, `edgeguard-web`, `edgeguard-fetcher`) | `1.0.39` | Active |
+| TypeScript SDK (`@tinplate/sdk`) | `1.1.7` | Active |
+| Python SDK (`tinplate`) | `1.1.7` | Active |
 
 ## Reporting a Vulnerability
 

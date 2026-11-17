@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.5")
+        self.assertEqual(__version__, "1.1.7")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
@@ -295,6 +295,74 @@ class TestTinplateClient(unittest.TestCase):
             with self.assertRaises(TinplateError) as ctx:
                 secure.get_jwks()
             self.assertEqual(ctx.exception.code, "invalid_jwks")
+
+    def test_v116_per_call_receipts_workdays_and_sanitize_turn(self) -> None:
+        client = TinplateClient(api_key="tok_secret")
+        fake_resp = MagicMock()
+        fake_resp.status = 200
+        fake_resp.headers = {}
+        fake_resp.read.return_value = json.dumps({"ok": True, "data": {"working_days": 5}}).encode("utf-8")
+        fake_resp.__enter__.return_value = fake_resp
+        with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
+            client.workdays_between(
+                country="HU",
+                start_date="2026-11-16",
+                end_date="2026-11-23",
+                include_start=False,
+                include_end=True,
+                receipt=True,
+            )
+            req = mock_open.call_args[0][0]
+            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/workday-holiday/between?receipt=true")
+            body = json.loads(req.data.decode("utf-8"))
+            self.assertEqual(body["include_start"], False)
+            self.assertEqual(body["include_end"], True)
+
+        in_ok = MagicMock()
+        in_ok.status = 200
+        in_ok.headers = {}
+        in_ok.read.return_value = json.dumps({
+            "ok": True,
+            "data": {
+                "results": [
+                    {"id": "prompt", "ok": True, "blocked": False, "data": {"verdict": "allow"}},
+                    {"id": "pii", "ok": True, "blocked": False, "data": {"redacted_text": "safe"}},
+                ]
+            },
+        }).encode("utf-8")
+        in_ok.__enter__.return_value = in_ok
+
+        sanitized_out = MagicMock()
+        sanitized_out.status = 200
+        sanitized_out.headers = {}
+        sanitized_out.read.return_value = json.dumps({
+            "ok": True,
+            "data": {"verdict": "sanitize", "safe": True, "sanitized_output": "Sanitized text"},
+        }).encode("utf-8")
+        sanitized_out.__enter__.return_value = sanitized_out
+
+        with patch("urllib.request.urlopen", side_effect=[in_ok, sanitized_out]):
+            turn = client.guard_llm_turn(user_prompt="hi", generate=lambda p: "raw unsafe")
+            self.assertFalse(turn["blocked"])
+            self.assertEqual(turn["verdict"], "sanitize")
+            self.assertEqual(turn["output"], "Sanitized text")
+
+        rev_resp = MagicMock()
+        rev_resp.status = 200
+        rev_resp.headers = {}
+        rev_resp.read.return_value = json.dumps({
+            "ok": True,
+            "data": {
+                "results": [
+                    {"id": "prompt", "ok": True, "blocked": False, "data": {"verdict": "review"}},
+                    {"id": "pii", "ok": True, "blocked": False, "data": {"redacted_text": "clean"}},
+                ]
+            },
+        }).encode("utf-8")
+        rev_resp.__enter__.return_value = rev_resp
+        with patch("urllib.request.urlopen", return_value=rev_resp):
+            flagged = client.guard_llm_turn(user_prompt="edge", generate=lambda p: p, block_on_flag=True)
+            self.assertTrue(flagged["blocked"])
 
 
 if __name__ == "__main__":

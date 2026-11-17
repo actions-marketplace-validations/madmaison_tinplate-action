@@ -120,6 +120,10 @@ runs:
             verdict: d.verdict,
             safe: d.safe,
             valid: d.valid,
+            compatible: d.compatible,
+            all_valid: d.all_valid,
+            clear: d.clear,
+            allowed: d.allowed,
             all_passed: d.all_passed,
             risk_score: d.risk_score,
           }));
@@ -130,12 +134,15 @@ runs:
               (failOnReview && (d.verdict === "review" || d.verdict === "warn")) ||
               d.safe === false ||
               d.allowed === false ||
+              d.clear === false ||
+              d.compatible === false ||
+              d.all_valid === false ||
               d.all_passed === false ||
               d.passed === false ||
               d.valid === false ||
               d.blocked === true;
             if (blocked) {
-              console.error("Tinplate Gate blocked execution:", JSON.stringify({ verdict: d.verdict, safe: d.safe, allowed: d.allowed, valid: d.valid, risk_score: d.risk_score }));
+              console.error("Tinplate Gate blocked execution:", JSON.stringify({ verdict: d.verdict, safe: d.safe, allowed: d.allowed, clear: d.clear, compatible: d.compatible, all_valid: d.all_valid, valid: d.valid, risk_score: d.risk_score }));
               process.exit(1);
             }
           }

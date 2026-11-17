@@ -1,6 +1,6 @@
 {
   "name": "@tinplate/sdk",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate 42-API AI Safety, Security & Compliance Edge Gateway.",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "node -e \"const fs=require('fs'),cp=require('child_process');const r=cp.spawnSync('tsc',['--version'],{shell:true,stdio:'ignore'});if(r.status===0){const b=cp.spawnSync('tsc',['-p','tsconfig.json'],{shell:true,stdio:'inherit'});process.exit(b.status??1);}if(!fs.existsSync('dist/index.js')||!fs.existsSync('dist/index.d.ts')){console.error('tsc not found and dist/ missing');process.exit(1);}\""
   },
   "homepage": "https://tinplate.dev/sdk",
   "repository": {
