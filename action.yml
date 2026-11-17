@@ -21,7 +21,7 @@ inputs:
     required: false
     default: "https://api.tinplate.dev"
   preset:
-    description: "Optional named preset (llm-ingest-safe, llm-output-safe, agent-pre-exec, eu-vendor-kyb)"
+    description: "Optional named preset (llm-ingest-safe, llm-output-safe, agent-pre-exec)"
     required: false
     default: ""
   endpoint:
@@ -61,9 +61,11 @@ runs:
         TINPLATE_PRINT_RESPONSE: ${{ inputs.print_response }}
       run: |
         set -euo pipefail
-        if [ -n "${TINPLATE_KEY:-}" ]; then
-          echo "::add-mask::${TINPLATE_KEY}"
+        if [ -z "${TINPLATE_KEY:-}" ]; then
+          echo "::error::api_key input must not be empty" >&2
+          exit 1
         fi
+        echo "::add-mask::${TINPLATE_KEY}"
         BASE="${TINPLATE_BASE_URL%/}"
         if [ "$TINPLATE_PROVIDER" = "rapidapi" ] && [ -n "$TINPLATE_RAPID_HOST" ] && [ "$BASE" = "https://api.tinplate.dev" ]; then
           BASE="https://${TINPLATE_RAPID_HOST}"

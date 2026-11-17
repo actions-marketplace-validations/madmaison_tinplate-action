@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.7")
+        self.assertEqual(__version__, "1.1.8")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
@@ -25,6 +25,7 @@ class TestTinplateClient(unittest.TestCase):
         self.assertEqual(client.headers["X-RapidAPI-Key"], "rk_123")
         self.assertEqual(client.headers["X-RapidAPI-Host"], "example.p.rapidapi.com")
         self.assertEqual(client.headers["X-Tinplate-Receipt-Request"], "true")
+        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.8")
 
     def test_headers_bearer_and_error(self) -> None:
         client = TinplateClient(api_key="tok_abc")
@@ -45,7 +46,7 @@ class TestTinplateClient(unittest.TestCase):
             self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/eu-vat-iban/iban?receipt=true")
             self.assertEqual(json.loads(req.data.decode("utf-8")), {"iban": "DE89370400440532013000"})
 
-        for method in ("scan_secrets", "guard_llm_output", "ua_bot_parser", "peppol_ubl_invoice", "issue_action_receipt", "guard_llm_turn", "health", "list_presets"):
+        for method in ("scan_secrets", "guard_llm_output", "ua_bot_parser", "guard_command_sql", "issue_action_receipt", "guard_llm_turn", "health", "list_presets"):
             self.assertTrue(callable(getattr(client, method)), f"Missing {method}")
 
     def test_https_enforcement_and_updated_signatures(self) -> None:
@@ -61,10 +62,10 @@ class TestTinplateClient(unittest.TestCase):
         fake_resp.read.return_value = json.dumps({"ok": True, "data": {"verdict": "allow"}}).encode("utf-8")
         fake_resp.__enter__.return_value = fake_resp
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            local_client.screen_sanctions(entity_name="VTB Bank", entity_type="company", country_code="RU")
+            local_client.validate_vat(vat_number="DE123456789")
             payload = json.loads(mock_open.call_args[0][0].data.decode("utf-8"))
-            self.assertEqual(payload["entity_name"], "VTB Bank")
-            self.assertNotIn("query", payload)
+            self.assertEqual(payload["vat_number"], "DE123456789")
+            self.assertNotIn("verify_vies", payload)
 
             local_client.guard_messages(messages=[{"role": "user", "content": "hi"}], redact_pii=True)
             msg_payload = json.loads(mock_open.call_args[0][0].data.decode("utf-8"))

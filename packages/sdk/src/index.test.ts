@@ -56,12 +56,9 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(pipeRes.data.all_passed).toBe(true);
     expect(pipeRes.data.completed_steps).toBe(2);
 
-    const presetRes = await client.preset("eu-vendor-kyb", {
-      vendor_name: "Tinplate Software Kft.",
-      supplier_country: "HU",
-      buyer_country: "DE",
-      net_amount: 500,
-      vat_number: "DE123456789",
+    const presetRes = await client.preset("llm-ingest-safe", {
+      text: "Hello from alice@acme.eu",
+      context: "user_input",
     });
     expect(presetRes.ok).toBe(true);
   });
@@ -390,7 +387,7 @@ describe("@tinplate/sdk TinplateClient", () => {
     await expect(redirectClient.call("/v1/json-heal", { raw: "{}" })).rejects.toSatisfy(
       (e: unknown) => e instanceof TinplateError && e.code === "redirect_blocked",
     );
-    expect(seenRedirect).toBe("error");
+    expect(seenRedirect).toBe("manual");
     await expect(redirectClient.getJwks()).rejects.toSatisfy(
       (e: unknown) => e instanceof TinplateError && e.code === "redirect_blocked",
     );
