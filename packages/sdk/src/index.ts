@@ -58,7 +58,7 @@ export interface TinplateClientOptions {
   zylaApiKey?: string;
   /** Request cryptographic signed audit receipts (Ed25519/ES256 via JWKS or HMAC-SHA256) on every call */
   requestReceipts?: boolean;
-  /** Zero-retention per-call signing secret sent via X-Tinplate-Signing-Secret (for webhook/consent/receipt endpoints) */
+  /** Ephemeral per-call signing secret sent via X-Tinplate-Signing-Secret (not stored by Tinplate) */
   signingSecret?: string;
   /** Request timeout in milliseconds (default: 8000) */
   timeoutMs?: number;
