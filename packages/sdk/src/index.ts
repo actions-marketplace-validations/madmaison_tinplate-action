@@ -601,7 +601,13 @@ export class TinplateClient {
   listPresets() {
     return this.requestWithRetry<{
       total_presets: number;
-      presets: Array<{ id: string; title: string; description: string; steps: unknown[] }>;
+      presets: Array<{
+        id: string;
+        title: string;
+        description: string;
+        endpoints: string[];
+        sample_input: Record<string, unknown>;
+      }>;
     }>("GET", "/v1/presets");
   }
 
@@ -750,10 +756,20 @@ export class TinplateClient {
     options?: TinplateCallOptions,
   ) {
     return this.call<{
-      verdict: "allow" | "review" | "block";
       safe: boolean;
-      messages: Array<Record<string, unknown>>;
-      tokens: Record<string, string>;
+      verdict: "allow" | "review" | "block";
+      max_risk_score: number;
+      sanitized_messages: Array<Record<string, unknown>>;
+      restoration_map: Record<string, string>;
+      summary: {
+        total_messages: number;
+        scanned_messages: number;
+        blocked_turns: number;
+        total_pii_redacted: number;
+        total_secrets_redacted: number;
+        injection_categories: string[];
+      };
+      turn_findings: unknown[];
     }>("/v1/llm-messages-guard", input, options);
   }
 
@@ -780,7 +796,7 @@ export class TinplateClient {
     input: { redacted_text: string; tokens: Record<string, string> },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{ restored_text: string }>("/v1/pii-redactor/restore", input, options);
+    return this.call<{ text: string; restored_count: number }>("/v1/pii-redactor/restore", input, options);
   }
 
   /** 05 — EU IBAN & BIC Validator API */
@@ -856,7 +872,7 @@ export class TinplateClient {
     return this.call("/v1/schema-diff", input, options);
   }
 
-  /** 13 — Outbound SSRF Firewall API */
+  /** 13 — Agent URL & SSRF Signal Validator API */
   ssrfFirewall(
     input: {
       url: string;

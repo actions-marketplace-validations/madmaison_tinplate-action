@@ -534,5 +534,32 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(sanitizedTurn.blocked).toBe(false);
     expect(sanitizedTurn.verdict).toBe("sanitize");
     expect(sanitizedTurn.output).toBe("Clean answer [REDACTED]");
+
+    // v1.0.46 SDK typed return shapes: listPresets, guardMessages, restorePii
+    const presets = await clientNoGlobalReceipt.listPresets();
+    expect(presets.data.total_presets).toBeGreaterThanOrEqual(3);
+    const firstPreset = presets.data.presets[0];
+    expect(firstPreset?.endpoints.length).toBeGreaterThan(0);
+    expect(typeof firstPreset?.sample_input).toBe("object");
+
+    const guardedMsgs = await clientNoGlobalReceipt.guardMessages({
+      messages: [
+        { role: "user", content: "Email me at alice@tinplate.dev please" },
+      ],
+      redact_pii: true,
+    });
+    expect(guardedMsgs.data.sanitized_messages[0]?.content).toContain("[PII_EMAIL_1]");
+    expect(guardedMsgs.data.restoration_map["[PII_EMAIL_1]"]).toBe("alice@tinplate.dev");
+    expect(typeof guardedMsgs.data.max_risk_score).toBe("number");
+    expect(Array.isArray(guardedMsgs.data.turn_findings)).toBe(true);
+    expect(typeof guardedMsgs.data.summary.scanned_messages).toBe("number");
+    expect(guardedMsgs.data.summary.total_messages).toBe(1);
+
+    const restored = await clientNoGlobalReceipt.restorePii({
+      redacted_text: String(guardedMsgs.data.sanitized_messages[0]?.content ?? ""),
+      tokens: guardedMsgs.data.restoration_map,
+    });
+    expect(restored.data.text).toBe("Email me at alice@tinplate.dev please");
+    expect(restored.data.restored_count).toBe(1);
   });
 });
