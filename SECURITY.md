@@ -6,7 +6,7 @@ Tinplate builds stateless security, guardrail, and EU/data validation micro-APIs
 
 | Component | Version | Security Fixes |
 | --- | --- | --- |
-| Edge Gateway, Web Portal & SSRF Fetcher Workers | `1.0.46` | Active |
+| Edge Gateway, Web Portal & SSRF Fetcher Workers | `1.0.48` | Active |
 | TypeScript SDK (`@tinplate/sdk`) | `1.1.8` | Active |
 | Python SDK (`tinplate`) | `1.1.8` | Active |
 
