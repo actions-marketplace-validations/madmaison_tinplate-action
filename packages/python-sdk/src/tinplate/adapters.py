@@ -37,7 +37,7 @@ def _build_core_tools(client: TinplateClient) -> List[TinplateToolSpec]:
         ),
         TinplateToolSpec(
             name="tinplate_redact_pii",
-            description="Redact PII (emails, phones, IBANs, SSNs, API keys) with reversible tokens.",
+            description="Redact PII (emails, phones, IBANs, SSNs, EU VAT, and national tax IDs) with reversible tokens.",
             func=lambda text, locales=None: client.redact_pii(
                 text=text, locales=locales or ["GLOBAL"]
             ),
