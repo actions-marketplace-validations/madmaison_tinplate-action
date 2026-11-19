@@ -174,7 +174,10 @@ def _validate_input_guardrail_pipeline(
 
 
 class TinplateClient:
-    """Zero-dependency client for Tinplate /v1/* endpoints, /v1/pipeline, and /v1/presets."""
+    """Zero-dependency client for Tinplate /v1/* endpoints, /v1/pipeline, and /v1/presets.
+
+    Pass `zyla_api_key` together with `base_url` pointing at your subscribed Zyla endpoint host URL.
+    """
 
     def __init__(
         self,
@@ -304,6 +307,11 @@ class TinplateClient:
             req_headers["X-Tinplate-Signing-Secret"] = signing_secret
         if not want_receipt:
             req_headers.pop("X-Tinplate-Receipt-Request", None)
+        if endpoint == "/.well-known/jwks.json":
+            req_headers.pop("Authorization", None)
+            req_headers.pop("X-RapidAPI-Key", None)
+            req_headers.pop("X-RapidAPI-Host", None)
+            req_headers.pop("X-Tinplate-Signing-Secret", None)
         if method == "GET":
             req_headers.pop("Content-Type", None)
 
@@ -687,13 +695,17 @@ class TinplateClient:
         self,
         *,
         vat_number: str,
+        verify_vies: Optional[bool] = None,
         receipt: Optional[bool] = None,
         signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """05 — EU VAT Number Format Validator API (offline syntax/checksum only)."""
+        payload: Dict[str, Any] = {"vat_number": vat_number}
+        if verify_vies is not None:
+            payload["verify_vies"] = verify_vies
         return self.call(
             "/v1/eu-vat-iban/vat",
-            {"vat_number": vat_number},
+            payload,
             receipt=receipt,
             signing_secret=signing_secret,
         )

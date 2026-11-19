@@ -535,6 +535,29 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(sanitizedTurn.verdict).toBe("sanitize");
     expect(sanitizedTurn.output).toBe("Clean answer [REDACTED]");
 
+    const wrappedSanitized = await withTinplate(sanitizeClient, {
+      prompt: "hello",
+      generate: async () => "Leaky answer",
+    });
+    expect(wrappedSanitized.blocked).toBe(false);
+    expect(wrappedSanitized.verdict).toBe("sanitize");
+    expect(wrappedSanitized.output).toBe("Clean answer [REDACTED]");
+
+    const guardedSanitizedStream = guardStream(sanitizeClient, {
+      prompt: "hello",
+      stream: async function* () {
+        yield "Leaky ";
+        yield "answer";
+      },
+    });
+    for await (const _chunk of guardedSanitizedStream.stream) {
+      // consume stream
+    }
+    const streamSanitizedResult = await guardedSanitizedStream.result;
+    expect(streamSanitizedResult.blocked).toBe(false);
+    expect(streamSanitizedResult.verdict).toBe("sanitize");
+    expect(streamSanitizedResult.output).toBe("Clean answer [REDACTED]");
+
     // v1.0.46 SDK typed return shapes: listPresets, guardMessages, restorePii
     const presets = await clientNoGlobalReceipt.listPresets();
     expect(presets.data.total_presets).toBeGreaterThanOrEqual(3);

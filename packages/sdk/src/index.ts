@@ -48,13 +48,13 @@ export interface TinplateClientOptions {
   baseUrl?: string;
   /** Allow non-HTTPS baseUrl when credentials are set (unsafe except for local testing; localhost is always allowed) */
   allowInsecure?: boolean;
-  /** Direct Enterprise Bearer API Key */
+  /** Direct Polar All-Access Bearer Key (`tp_...`) or ADMIN_KEY */
   apiKey?: string;
   /** RapidAPI X-RapidAPI-Key header */
   rapidApiKey?: string;
   /** RapidAPI X-RapidAPI-Host header */
   rapidApiHost?: string;
-  /** Zyla API Hub Bearer Key */
+  /** Zyla API Hub Bearer Key (set `baseUrl` to your Zyla endpoint host URL) */
   zylaApiKey?: string;
   /** Request cryptographic signed audit receipts (Ed25519/ES256 via JWKS or HMAC-SHA256) on every call */
   requestReceipts?: boolean;
@@ -667,7 +667,11 @@ export class TinplateClient {
       verdict: "allow" | "review" | "block";
       risk_score: number;
       blocked: boolean;
+      categories: string[];
       signals: unknown[];
+      normalization: Record<string, unknown>;
+      judge: string;
+      ai_judge: unknown;
     }>("/v1/prompt-guard", input, options);
   }
 
@@ -683,6 +687,8 @@ export class TinplateClient {
   ) {
     return this.call<{
       redacted_text: string;
+      findings: unknown[];
+      counts: Record<string, number>;
       total_redacted: number;
       tokens: Record<string, string>;
     }>("/v1/pii-redactor", input, options);
@@ -701,6 +707,8 @@ export class TinplateClient {
       data: T;
       healed_json: string | null;
       repairs: string[];
+      schema_valid: boolean | null;
+      schema_errors: string[];
     }>("/v1/json-heal", input, options);
   }
 
@@ -716,10 +724,13 @@ export class TinplateClient {
     options?: TinplateCallOptions,
   ) {
     return this.call<{
-      redacted_text: string;
-      total_secrets: number;
       verdict: "allow" | "warn" | "block";
+      risk_score: number;
+      redacted_text: string;
       findings: unknown[];
+      counts: Record<string, number>;
+      total_secrets: number;
+      tokens?: Record<string, string>;
     }>("/v1/secret-scanner", input, options);
   }
 
@@ -738,7 +749,10 @@ export class TinplateClient {
     return this.call<{
       verdict: "allow" | "sanitize" | "block";
       safe: boolean;
+      risk_score: number;
       sanitized_output: string;
+      findings: unknown[];
+      metrics: Record<string, unknown>;
     }>("/v1/llm-output-guard", input, options);
   }
 
@@ -787,6 +801,9 @@ export class TinplateClient {
       verdict: "allow" | "review" | "block";
       safe: boolean;
       risk_score: number;
+      detected_language: string;
+      clean_code?: string;
+      categories_triggered: string[];
       findings: unknown[];
     }>("/v1/agent-code-guard", input, options);
   }
@@ -805,7 +822,10 @@ export class TinplateClient {
   }
 
   /** 05 — EU VAT Number Format Validator API (offline syntax/checksum only) */
-  validateVat(input: { vat_number: string }, options?: TinplateCallOptions) {
+  validateVat(
+    input: { vat_number: string; verify_vies?: boolean },
+    options?: TinplateCallOptions,
+  ) {
     return this.call("/v1/eu-vat-iban/vat", input, options);
   }
 
@@ -817,6 +837,9 @@ export class TinplateClient {
       records?: {
         mx?: string[];
         txt?: string[];
+        dmarc_txt?: string[];
+        mta_sts_txt?: string[];
+        dkim_txt?: Record<string, string[]>;
         dmarc?: string[];
         dkim?: Record<string, string[]>;
         mta_sts?: string[];
@@ -1221,12 +1244,20 @@ export class TinplateClient {
       };
     }
 
+    const safeOutput =
+      outRes.data.verdict === "sanitize" &&
+      typeof outRes.data.sanitized_output === "string"
+        ? outRes.data.sanitized_output
+        : outputText;
+    const effectiveVerdict =
+      outRes.data.verdict === "sanitize" ? "sanitize" : verdict;
+
     return {
       blocked: false,
-      verdict,
+      verdict: effectiveVerdict,
       redactedPrompt,
       rawResponse,
-      output: outputText,
+      output: safeOutput,
       ...(healedJson ? { healedJson } : {}),
       outputGuard: outRes.data as Record<string, unknown>,
     };
@@ -1295,11 +1326,22 @@ export class TinplateClient {
         }
         const outRes = await self.guardLlmOutput({ output: fullOutput });
         const outputBlocked = isOutputBlocked(outRes.data, blockOnReview);
+        const safeStreamOutput = outputBlocked
+          ? ""
+          : outRes.data.verdict === "sanitize" &&
+              typeof outRes.data.sanitized_output === "string"
+            ? outRes.data.sanitized_output
+            : fullOutput;
+        const effectiveStreamVerdict = outputBlocked
+          ? String(outRes.data.verdict ?? "block")
+          : outRes.data.verdict === "sanitize"
+            ? "sanitize"
+            : verdict;
         resolveResult({
           blocked: outputBlocked,
-          verdict: outputBlocked ? String(outRes.data.verdict ?? "block") : verdict,
+          verdict: effectiveStreamVerdict,
           redactedPrompt,
-          output: outputBlocked ? "" : fullOutput,
+          output: safeStreamOutput,
           ...(healedJson ? { healedJson } : {}),
           outputGuard: outRes.data as Record<string, unknown>,
         });

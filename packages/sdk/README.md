@@ -32,7 +32,7 @@ const res = await tinplate.promptGuard({
 console.log(res.data.verdict, res.data.risk_score);
 ```
 
-### Via Zyla API Hub or Direct Bearer Key
+### Via Direct Polar Bearer Key (`tp_...`)
 
 ```ts
 const tinplate = new TinplateClient({
@@ -51,6 +51,15 @@ if (healed.receipt?.token) {
   const verified = await tinplate.verifyReceiptOffline(healed.receipt.token, { jwks });
   console.log(verified.valid, verified.alg, verified.kid);
 }
+```
+
+### Via Zyla API Hub
+
+```ts
+const zylaClient = new TinplateClient({
+  baseUrl: "https://zylalabs.com/api/<api-id>/<endpoint-id>/<endpoint-slug>",
+  zylaApiKey: process.env.ZYLA_API_KEY!,
+});
 ```
 
 ### Multi-Step Pipeline (`$steps` piping) & Presets
@@ -82,7 +91,7 @@ const preset = await tinplate.preset("llm-ingest-safe", {
 - Public GitHub Repository & Issues: https://github.com/madmaison/tinplate-action
 - npm Package: https://www.npmjs.com/package/@tinplate/sdk
 - Python SDK (PyPI): https://pypi.org/project/tinplate/
-- Hosted MCP Server: https://api.tinplate.dev/mcp
+- Hosted MCP Server: https://api.tinplate.dev/mcp (7 free tools keyless at 8 KB / 20 req/min; all 39 tools with a Polar subscription)
 - Full API Catalog (32 APIs / 39 endpoints): https://tinplate.dev/#apis
 - Public Receipt Key Discovery (JWKS): https://api.tinplate.dev/.well-known/jwks.json
 - Interactive Live Sandbox: https://tinplate.dev/tools

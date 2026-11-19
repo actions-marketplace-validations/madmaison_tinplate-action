@@ -17,7 +17,7 @@ inputs:
     required: false
     default: ""
   base_url:
-    description: "Target base URL (default: https://api.tinplate.dev, or https://<rapidapi_host>)"
+    description: "Target base URL (default: https://api.tinplate.dev; set to https://<rapidapi_host> or your Zyla endpoint host URL for marketplace keys)"
     required: false
     default: "https://api.tinplate.dev"
   preset:
@@ -69,6 +69,10 @@ runs:
         BASE="${TINPLATE_BASE_URL%/}"
         if [ "$TINPLATE_PROVIDER" = "rapidapi" ] && [ -n "$TINPLATE_RAPID_HOST" ] && [ "$BASE" = "https://api.tinplate.dev" ]; then
           BASE="https://${TINPLATE_RAPID_HOST}"
+        fi
+        if [ "$TINPLATE_PROVIDER" = "zyla" ] && [ "$BASE" = "https://api.tinplate.dev" ]; then
+          echo "::error::provider 'zyla' requires setting base_url to your Zyla API Hub endpoint host URL (api.tinplate.dev only accepts Polar/Admin Bearer keys directly)" >&2
+          exit 1
         fi
         if [[ "$BASE" == *"@"* ]] || [[ "$BASE" =~ [[:space:]] ]]; then
           echo "::error::Invalid base_url '${BASE}'" >&2
