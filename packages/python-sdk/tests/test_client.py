@@ -365,6 +365,50 @@ class TestTinplateClient(unittest.TestCase):
             flagged = client.guard_llm_turn(user_prompt="edge", generate=lambda p: p, block_on_flag=True)
             self.assertTrue(flagged["blocked"])
 
+        # Real 31-llm-output-guard returns verdict="sanitize" alongside safe=False
+        sanitize_safe_false = MagicMock()
+        sanitize_safe_false.status = 200
+        sanitize_safe_false.headers = {}
+        sanitize_safe_false.read.return_value = json.dumps({
+            "ok": True,
+            "data": {"verdict": "sanitize", "safe": False, "sanitized_output": "Sanitized [REMOVED]"},
+        }).encode("utf-8")
+        sanitize_safe_false.__enter__.return_value = sanitize_safe_false
+
+        review_safe_false = MagicMock()
+        review_safe_false.status = 200
+        review_safe_false.headers = {}
+        review_safe_false.read.return_value = json.dumps({
+            "ok": True,
+            "data": {"verdict": "review", "safe": False},
+        }).encode("utf-8")
+        review_safe_false.__enter__.return_value = review_safe_false
+
+        with patch("urllib.request.urlopen", side_effect=[in_ok, sanitize_safe_false, in_ok, review_safe_false]):
+            turn_san = client.guard_llm_turn(user_prompt="hi", generate=lambda p: "raw <script>x</script>")
+            self.assertFalse(turn_san["blocked"])
+            self.assertEqual(turn_san["verdict"], "sanitize")
+            self.assertEqual(turn_san["output"], "Sanitized [REMOVED]")
+
+            turn_rev = client.guard_llm_turn(user_prompt="hi", generate=lambda p: "edge output")
+            self.assertFalse(turn_rev["blocked"])
+            self.assertEqual(turn_rev["output"], "edge output")
+
+        for blocking_verdict in ("block", "fail", "ungrounded", "reject"):
+            blk = MagicMock()
+            blk.status = 200
+            blk.headers = {}
+            blk.read.return_value = json.dumps({
+                "ok": True,
+                "data": {"verdict": blocking_verdict, "safe": True},
+            }).encode("utf-8")
+            blk.__enter__.return_value = blk
+            with patch("urllib.request.urlopen", side_effect=[in_ok, blk]):
+                res = client.guard_llm_turn(user_prompt="hi", generate=lambda p: "bad")
+                self.assertTrue(res["blocked"], blocking_verdict)
+                self.assertEqual(res["verdict"], blocking_verdict)
+                self.assertIsNone(res["output"])
+
 
 if __name__ == "__main__":
     unittest.main()

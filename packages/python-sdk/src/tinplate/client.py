@@ -73,6 +73,43 @@ def _is_local_host(hostname: Optional[str]) -> bool:
     return False
 
 
+_BLOCKING_VERDICTS = frozenset({
+    "block",
+    "fail",
+    "reject",
+    "ungrounded",
+    "contradicted",
+    "vulnerable",
+    "invalid",
+})
+_ESCALATED_VERDICTS = frozenset({"review", "warn", "flagged", "partially_grounded"})
+_NON_BLOCKING_VERDICTS = frozenset({
+    "allow",
+    "safe",
+    "pass",
+    "grounded",
+    "clean",
+    "sanitize",
+    "sanitized",
+    "repaired",
+})
+
+
+def _is_output_blocked(out_data: Any, *, block_on_review: bool = False) -> bool:
+    """Decide whether a guardrail payload blocks execution, checking `verdict` before `safe`."""
+    if not isinstance(out_data, dict):
+        return True
+    verdict = out_data.get("verdict")
+    if isinstance(verdict, str):
+        if verdict in _BLOCKING_VERDICTS:
+            return True
+        if verdict in _ESCALATED_VERDICTS:
+            return block_on_review
+        if verdict in _NON_BLOCKING_VERDICTS:
+            return False
+    return out_data.get("safe") is False or out_data.get("allowed") is False
+
+
 def _validate_input_guardrail_pipeline(
     pre: Dict[str, Any],
     *,
@@ -949,11 +986,7 @@ class TinplateClient:
         if not isinstance(out_data, dict):
             raise TinplateError(502, "guardrail_failed", "Output guardrail returned invalid data")
         out_verdict = out_data.get("verdict")
-        output_blocked = (
-            out_data.get("safe") is False
-            or out_verdict == "block"
-            or (should_block_review and out_verdict == "review")
-        )
+        output_blocked = _is_output_blocked(out_data, block_on_review=should_block_review)
         safe_output: Optional[str] = None
         if not output_blocked:
             if out_verdict == "sanitize" and isinstance(out_data.get("sanitized_output"), str):

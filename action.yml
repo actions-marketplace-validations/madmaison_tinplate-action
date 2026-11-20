@@ -128,27 +128,35 @@ runs:
             valid: d.valid,
             compatible: d.compatible,
             all_valid: d.all_valid,
-            clear: d.clear,
             allowed: d.allowed,
+            ssrf_safe: d.ssrf_safe,
             all_passed: d.all_passed,
             risk_score: d.risk_score,
           }));
           if (process.env.TINPLATE_FAIL_ON_BLOCK === "true") {
             const failOnReview = process.env.TINPLATE_FAIL_ON === "review";
+            const blockingVerdicts = new Set(["block", "fail", "reject", "ungrounded", "contradicted", "vulnerable", "invalid"]);
+            const escalatedVerdicts = new Set(["review", "warn", "flagged", "partially_grounded"]);
+            const nonBlockingVerdicts = new Set(["allow", "safe", "pass", "grounded", "clean", "sanitize", "sanitized", "repaired"]);
+            let verdictBlocked = false;
+            if (typeof d.verdict === "string") {
+              if (blockingVerdicts.has(d.verdict)) verdictBlocked = true;
+              else if (escalatedVerdicts.has(d.verdict)) verdictBlocked = failOnReview;
+              else if (!nonBlockingVerdicts.has(d.verdict)) verdictBlocked = d.safe === false;
+            } else {
+              verdictBlocked = d.safe === false;
+            }
             const blocked =
-              d.verdict === "block" ||
-              (failOnReview && (d.verdict === "review" || d.verdict === "warn")) ||
-              d.safe === false ||
+              verdictBlocked ||
               d.allowed === false ||
-              d.clear === false ||
+              d.ssrf_safe === false ||
               d.compatible === false ||
               d.all_valid === false ||
               d.all_passed === false ||
-              d.passed === false ||
               d.valid === false ||
               d.blocked === true;
             if (blocked) {
-              console.error("Tinplate Gate blocked execution:", JSON.stringify({ verdict: d.verdict, safe: d.safe, allowed: d.allowed, clear: d.clear, compatible: d.compatible, all_valid: d.all_valid, valid: d.valid, risk_score: d.risk_score }));
+              console.error("Tinplate Gate blocked execution:", JSON.stringify({ verdict: d.verdict, safe: d.safe, allowed: d.allowed, ssrf_safe: d.ssrf_safe, compatible: d.compatible, all_valid: d.all_valid, all_passed: d.all_passed, valid: d.valid, risk_score: d.risk_score }));
               process.exit(1);
             }
           }

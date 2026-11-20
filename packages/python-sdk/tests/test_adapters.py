@@ -115,6 +115,34 @@ class AdapterTests(unittest.TestCase):
                 llama.guard_query("Contact alice@acme.eu")
             self.assertEqual(ctx.exception.code, "guardrail_failed")
 
+    def test_verdict_precedence_in_adapter_guards(self) -> None:
+        client = TinplateClient(api_key="tp_test_key")
+        handler = TinplateLangChainCallbackHandler(client)
+        llama = TinplateLlamaIndexCallback(client)
+
+        # sanitize / review with safe=False must not raise; block / fail / ungrounded must raise
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_DummyResponse({"ok": True, "data": {"verdict": "sanitize", "safe": False, "sanitized_output": "ok"}}),
+        ):
+            handler.on_llm_end("raw <script>x</script>")
+            llama.on_event_end("llm", {"response": "raw <script>x</script>"})
+
+        with patch(
+            "urllib.request.urlopen",
+            return_value=_DummyResponse({"ok": True, "data": {"verdict": "review", "safe": False}}),
+        ):
+            handler.on_tool_start({}, "curl https://example.com")
+
+        for verdict in ("block", "fail", "reject", "ungrounded"):
+            with patch(
+                "urllib.request.urlopen",
+                return_value=_DummyResponse({"ok": True, "data": {"verdict": verdict, "safe": True}}),
+            ):
+                with self.assertRaises(TinplateError) as ctx:
+                    handler.on_tool_start({}, "unsafe")
+                self.assertEqual(ctx.exception.code, "tool_blocked")
+
 
 if __name__ == "__main__":
     unittest.main()

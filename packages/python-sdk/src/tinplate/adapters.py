@@ -5,11 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 
-from .client import TinplateClient, TinplateError, _validate_input_guardrail_pipeline
+from .client import TinplateClient, TinplateError, _is_output_blocked, _validate_input_guardrail_pipeline
 
 
 def _raise_if_unsafe(data: Any, code: str, message: str) -> Dict[str, Any]:
-    if not isinstance(data, dict) or data.get("safe") is False or data.get("verdict") == "block":
+    if _is_output_blocked(data, block_on_review=False):
         raise TinplateError(403, code, message)
     return data
 

@@ -585,4 +585,98 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(restored.data.text).toBe("Email me at alice@tinplate.dev please");
     expect(restored.data.restored_count).toBe(1);
   });
+
+  it("evaluates output verdict before safe flag on sanitize, review, and blocking verdicts", async () => {
+    const makeClient = (outData: Record<string, unknown>) =>
+      new TinplateClient({
+        apiKey: "tok_test",
+        fetch: async (url) => {
+          const path = new URL(String(url)).pathname;
+          if (path === "/v1/pipeline") {
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                data: {
+                  results: [
+                    { id: "prompt", ok: true, blocked: false, data: { verdict: "allow" } },
+                    { id: "pii", ok: true, blocked: false, data: { redacted_text: "clean" } },
+                  ],
+                },
+                meta: { request_id: "r1", ms: 1 },
+              }),
+              { status: 200 },
+            );
+          }
+          return new Response(
+            JSON.stringify({ ok: true, data: outData, meta: { request_id: "r2", ms: 1 } }),
+            { status: 200 },
+          );
+        },
+      });
+
+    // Real 31-llm-output-guard returns verdict="sanitize" with safe=false
+    const sanitizeUnsafeClient = makeClient({
+      verdict: "sanitize",
+      safe: false,
+      sanitized_output: "Sanitized output [REMOVED]",
+    });
+    const turn = await sanitizeUnsafeClient.guardLlmTurn({
+      userPrompt: "hello",
+      generate: async () => "Raw <script>bad()</script>",
+    });
+    expect(turn.blocked).toBe(false);
+    expect(turn.verdict).toBe("sanitize");
+    expect(turn.output).toBe("Sanitized output [REMOVED]");
+
+    const wrapped = await withTinplate(sanitizeUnsafeClient, {
+      prompt: "hello",
+      generate: async () => "Raw <script>bad()</script>",
+    });
+    expect(wrapped.blocked).toBe(false);
+    expect(wrapped.verdict).toBe("sanitize");
+    expect(wrapped.output).toBe("Sanitized output [REMOVED]");
+
+    const streamHandle = guardStream(sanitizeUnsafeClient, {
+      prompt: "hello",
+      stream: async function* () {
+        yield "Raw <script>bad()</script>";
+      },
+    });
+    for await (const _chunk of streamHandle.stream) {
+      // drain
+    }
+    const streamResult = await streamHandle.result;
+    expect(streamResult.blocked).toBe(false);
+    expect(streamResult.verdict).toBe("sanitize");
+    expect(streamResult.output).toBe("Sanitized output [REMOVED]");
+
+    // Escalated verdict respects blockOnReview rather than tripping safe:false
+    const reviewClient = makeClient({ verdict: "review", safe: false });
+    const reviewAllowed = await reviewClient.guardLlmTurn({
+      userPrompt: "hello",
+      generate: async () => "Model reply",
+    });
+    expect(reviewAllowed.blocked).toBe(false);
+    expect(reviewAllowed.output).toBe("Model reply");
+
+    const reviewBlocked = await reviewClient.guardLlmTurn({
+      userPrompt: "hello",
+      generate: async () => "Model reply",
+      blockOnReview: true,
+    });
+    expect(reviewBlocked.blocked).toBe(true);
+    expect(reviewBlocked.verdict).toBe("review");
+    expect(reviewBlocked.output).toBeNull();
+
+    for (const verdict of ["block", "fail", "ungrounded", "reject"]) {
+      const blockedClient = makeClient({ verdict, safe: true });
+      const res = await blockedClient.guardLlmTurn({
+        userPrompt: "hello",
+        generate: async () => "Bad reply",
+      });
+      expect(res.blocked, verdict).toBe(true);
+      expect(res.verdict).toBe(verdict);
+      expect(res.output).toBeNull();
+    }
+  });
 });

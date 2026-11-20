@@ -123,16 +123,38 @@ function isLocalHostname(hostname: string): boolean {
   return false;
 }
 
+const SDK_BLOCKING_VERDICTS = new Set([
+  "block",
+  "fail",
+  "reject",
+  "ungrounded",
+  "contradicted",
+  "vulnerable",
+  "invalid",
+]);
+const SDK_ESCALATED_VERDICTS = new Set(["review", "warn", "flagged", "partially_grounded"]);
+const SDK_NON_BLOCKING_VERDICTS = new Set([
+  "allow",
+  "safe",
+  "pass",
+  "grounded",
+  "clean",
+  "sanitize",
+  "sanitized",
+  "repaired",
+]);
+
 function isOutputBlocked(
-  outData: { verdict?: unknown; safe?: unknown } | undefined,
+  outData: { verdict?: unknown; safe?: unknown; allowed?: unknown } | undefined,
   blockOnReview: boolean,
 ): boolean {
   if (!outData || typeof outData !== "object") return true;
-  return (
-    outData.verdict === "block" ||
-    outData.safe === false ||
-    (blockOnReview && outData.verdict === "review")
-  );
+  if (typeof outData.verdict === "string") {
+    if (SDK_BLOCKING_VERDICTS.has(outData.verdict)) return true;
+    if (SDK_ESCALATED_VERDICTS.has(outData.verdict)) return blockOnReview;
+    if (SDK_NON_BLOCKING_VERDICTS.has(outData.verdict)) return false;
+  }
+  return outData.safe === false || outData.allowed === false;
 }
 
 export class TinplateClient {
@@ -704,7 +726,7 @@ export class TinplateClient {
   ) {
     return this.call<{
       valid: boolean;
-      data: T;
+      data: T | null;
       healed_json: string | null;
       repairs: string[];
       schema_valid: boolean | null;
@@ -765,7 +787,7 @@ export class TinplateClient {
       redact_pii?: boolean;
       scan_secrets?: boolean;
       strip_email_quotes?: boolean;
-      locales?: Array<"GLOBAL" | "EU" | "HU">;
+      locales?: Array<"GLOBAL" | "EU" | "HU" | "US">;
     },
     options?: TinplateCallOptions,
   ) {
@@ -840,10 +862,6 @@ export class TinplateClient {
         dmarc_txt?: string[];
         mta_sts_txt?: string[];
         dkim_txt?: Record<string, string[]>;
-        dmarc?: string[];
-        dkim?: Record<string, string[]>;
-        mta_sts?: string[];
-        bimi?: string[];
       };
     },
     options?: TinplateCallOptions,
