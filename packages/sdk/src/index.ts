@@ -1067,8 +1067,24 @@ export class TinplateClient {
       text: string;
       now?: string;
       timezone?: string;
+      default_currency?: string;
+      locale?:
+        | "en"
+        | "hu"
+        | "de"
+        | "es"
+        | "fr"
+        | "it"
+        | "pt"
+        | "pl"
+        | "nl"
+        | "sv"
+        | "tr"
+        | "ja"
+        | "zh";
       last_answer?: number;
       user_weight_kg?: number;
+      fx_rates?: Record<string, number>;
       domains?: Array<
         | "tasks"
         | "money"
@@ -1091,10 +1107,21 @@ export class TinplateClient {
       }>;
       macros?: Record<string, string>;
       wake_words?: string[];
+      snapshot?: Record<string, unknown>;
+      previous_intent?: Record<string, unknown>;
+      custom_foods?: Array<Record<string, unknown>>;
+      custom_slash_commands?: Array<{
+        command: string;
+        expansion?: string;
+        hint?: string;
+        domain?: string;
+      }>;
       allow_compound?: boolean;
       include_tokens?: boolean;
+      include_spans?: boolean;
       include_alternatives?: boolean;
       include_sentiment?: boolean;
+      include_ics?: boolean;
     },
     options?: TinplateCallOptions,
   ) {
@@ -1105,10 +1132,18 @@ export class TinplateClient {
       needs_llm: boolean;
       summary: string;
       normalized_input: string;
+      detected_locale?: string;
       intent: Record<string, unknown>;
       macro_trigger?: string;
       near_miss_hint?: { label: string; corrected_raw: string };
       tokens?: Array<{ text: string; kind: string }>;
+      spans?: Array<{
+        field: string;
+        start: number;
+        end: number;
+        text: string;
+        value?: string | number | boolean;
+      }>;
       alternatives?: Array<{ label: string; intent: Record<string, unknown> }>;
       sentiment?: {
         polarity: "positive" | "negative" | "neutral" | "mixed";
@@ -1117,10 +1152,147 @@ export class TinplateClient {
         urgency: "low" | "normal" | "high";
         signals: string[];
       };
+      ics?: string;
     }>("/v1/omnibar/parse", input, options);
   }
 
-  /** 43 — List all 42 supported Omnibar NLP intents (`GET /v1/omnibar/intents`, public) */
+  /** 43 — Sub-0.2 ms Omnibar Ghost-Text & Ranked Autocomplete (`POST /v1/omnibar/suggest`) */
+  suggestOmnibar(
+    input: {
+      text: string;
+      limit?: number;
+      domains?: Array<
+        | "tasks"
+        | "money"
+        | "body"
+        | "calc"
+        | "query"
+        | "knowledge"
+        | "media"
+        | "workspace"
+        | "navigation"
+        | "ai"
+      >;
+      projects?: Array<{ id: string; name: string; archived?: boolean }>;
+      snapshot?: Record<string, unknown>;
+      macros?: Record<string, string>;
+      custom_routes?: Array<{
+        id: string;
+        title: string;
+        space?: string;
+        subTab?: string;
+        keywords?: string[];
+      }>;
+      custom_foods?: Array<Record<string, unknown>>;
+      custom_slash_commands?: Array<{
+        command: string;
+        expansion?: string;
+        hint?: string;
+        domain?: string;
+      }>;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      ghost_suffix: string;
+      completions: Array<{
+        text: string;
+        label: string;
+        kind: string;
+        domain: string;
+        score: number;
+      }>;
+    }>("/v1/omnibar/suggest", input, options);
+  }
+
+  /** 43 — Stateless Sequential Omnibar Batch Parser (`POST /v1/omnibar/batch`) */
+  parseOmnibarBatch(
+    input: {
+      inputs: string[];
+      now?: string;
+      timezone?: string;
+      default_currency?: string;
+      locale?:
+        | "en"
+        | "hu"
+        | "de"
+        | "es"
+        | "fr"
+        | "it"
+        | "pt"
+        | "pl"
+        | "nl"
+        | "sv"
+        | "tr"
+        | "ja"
+        | "zh";
+      last_answer?: number;
+      user_weight_kg?: number;
+      fx_rates?: Record<string, number>;
+      domains?: Array<
+        | "tasks"
+        | "money"
+        | "body"
+        | "calc"
+        | "query"
+        | "knowledge"
+        | "media"
+        | "workspace"
+        | "navigation"
+        | "ai"
+      >;
+      projects?: Array<{ id: string; name: string; archived?: boolean }>;
+      custom_routes?: Array<{
+        id: string;
+        title: string;
+        space?: string;
+        subTab?: string;
+        keywords?: string[];
+      }>;
+      macros?: Record<string, string>;
+      wake_words?: string[];
+      snapshot?: Record<string, unknown>;
+      previous_intent?: Record<string, unknown>;
+      custom_foods?: Array<Record<string, unknown>>;
+      custom_slash_commands?: Array<{
+        command: string;
+        expansion?: string;
+        hint?: string;
+        domain?: string;
+      }>;
+      allow_compound?: boolean;
+      include_tokens?: boolean;
+      include_spans?: boolean;
+      include_alternatives?: boolean;
+      include_sentiment?: boolean;
+      include_ics?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      total: number;
+      results: Array<{
+        kind: string;
+        confidence: number;
+        matched_by: string;
+        needs_llm: boolean;
+        summary: string;
+        normalized_input: string;
+        detected_locale?: string;
+        intent: Record<string, unknown>;
+        spans?: Array<{
+          field: string;
+          start: number;
+          end: number;
+          text: string;
+          value?: string | number | boolean;
+        }>;
+        ics?: string;
+      }>;
+    }>("/v1/omnibar/batch", input, options);
+  }
+
+  /** 43 — List all 46 supported Omnibar NLP intents (`GET /v1/omnibar/intents`, public) */
   listOmnibarIntents() {
     return this.requestWithRetry<{
       total_intents: number;
@@ -1138,6 +1310,8 @@ export class TinplateClient {
   estimateNutrition(
     input: {
       text: string;
+      servings?: number;
+      custom_foods?: Array<Record<string, unknown>>;
     },
     options?: TinplateCallOptions,
   ) {
@@ -1154,6 +1328,14 @@ export class TinplateClient {
       sodium_mg: number;
       potassium_mg: number;
       cholesterol_mg: number;
+      caffeine_mg: number;
+      alcohol_g: number;
+      glycemic_load?: "low" | "medium" | "high";
+      satiety_score?: number;
+      allergens?: string[];
+      dietary_tags?: string[];
+      servings?: number;
+      per_serving?: Record<string, unknown>;
       items: Array<Record<string, unknown>>;
       unmatched_segments: string[];
     }>("/v1/nutrition/estimate", input, options);
@@ -1178,6 +1360,34 @@ export class TinplateClient {
       total_calories: number;
       exercise: Record<string, unknown> | null;
     }>("/v1/nutrition/calories-burned", input, options);
+  }
+
+  /** 44 — Offline Mifflin-St Jeor BMR/TDEE, Macro Split & Hydration Target Coach (`POST /v1/nutrition/targets`) */
+  calculateNutritionTargets(
+    input: {
+      weight_kg?: number;
+      height_cm?: number;
+      age_years?: number;
+      sex?: "male" | "female";
+      activity_level?: "sedentary" | "light" | "moderate" | "active" | "very_active";
+      goal?: "cut" | "maintain" | "bulk" | "keto" | "high_protein";
+      target_calories?: number;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      bmr?: number;
+      tdee?: number;
+      target_calories: number;
+      goal: "cut" | "maintain" | "bulk" | "keto" | "high_protein";
+      activity_level?: "sedentary" | "light" | "moderate" | "active" | "very_active";
+      protein_g: number;
+      carbs_g: number;
+      fat_g: number;
+      fiber_g: number;
+      water_target_ml: number;
+      macro_split_pct: { protein: number; carbs: number; fat: number };
+    }>("/v1/nutrition/targets", input, options);
   }
 
   private async runInputGuardrail(input: {

@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-_SDK_VERSION = "1.1.9"
+_SDK_VERSION = "1.1.10"
 
 _STDLIB_URLOPEN = urllib.request.urlopen
 _SCHEME_PREFIX_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
@@ -952,17 +952,26 @@ class TinplateClient:
         text: str,
         now: Optional[str] = None,
         timezone: Optional[str] = None,
+        default_currency: Optional[str] = None,
+        locale: Optional[str] = None,
         last_answer: Optional[float] = None,
         user_weight_kg: Optional[float] = None,
+        fx_rates: Optional[Dict[str, float]] = None,
         domains: Optional[List[str]] = None,
         projects: Optional[List[Dict[str, Any]]] = None,
         custom_routes: Optional[List[Dict[str, Any]]] = None,
         macros: Optional[Dict[str, str]] = None,
         wake_words: Optional[List[str]] = None,
+        snapshot: Optional[Dict[str, Any]] = None,
+        previous_intent: Optional[Dict[str, Any]] = None,
+        custom_foods: Optional[List[Dict[str, Any]]] = None,
+        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
         allow_compound: Optional[bool] = None,
         include_tokens: Optional[bool] = None,
+        include_spans: Optional[bool] = None,
         include_alternatives: Optional[bool] = None,
         include_sentiment: Optional[bool] = None,
+        include_ics: Optional[bool] = None,
         receipt: Optional[bool] = None,
         signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -971,35 +980,141 @@ class TinplateClient:
         for key, value in (
             ("now", now),
             ("timezone", timezone),
+            ("default_currency", default_currency),
+            ("locale", locale),
             ("last_answer", last_answer),
             ("user_weight_kg", user_weight_kg),
+            ("fx_rates", fx_rates),
             ("domains", domains),
             ("projects", projects),
             ("custom_routes", custom_routes),
             ("macros", macros),
             ("wake_words", wake_words),
+            ("snapshot", snapshot),
+            ("previous_intent", previous_intent),
+            ("custom_foods", custom_foods),
+            ("custom_slash_commands", custom_slash_commands),
             ("allow_compound", allow_compound),
             ("include_tokens", include_tokens),
+            ("include_spans", include_spans),
             ("include_alternatives", include_alternatives),
             ("include_sentiment", include_sentiment),
+            ("include_ics", include_ics),
         ):
             if value is not None:
                 payload[key] = value
         return self.call("/v1/omnibar/parse", payload, receipt=receipt, signing_secret=signing_secret)
 
+    def suggest_omnibar(
+        self,
+        *,
+        text: str,
+        limit: Optional[int] = None,
+        domains: Optional[List[str]] = None,
+        projects: Optional[List[Dict[str, Any]]] = None,
+        snapshot: Optional[Dict[str, Any]] = None,
+        macros: Optional[Dict[str, str]] = None,
+        custom_routes: Optional[List[Dict[str, Any]]] = None,
+        custom_foods: Optional[List[Dict[str, Any]]] = None,
+        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """43 — Sub-0.2 ms Omnibar Ghost-Text & Ranked Autocomplete (`POST /v1/omnibar/suggest`)."""
+        payload: Dict[str, Any] = {"text": text}
+        for key, value in (
+            ("limit", limit),
+            ("domains", domains),
+            ("projects", projects),
+            ("snapshot", snapshot),
+            ("macros", macros),
+            ("custom_routes", custom_routes),
+            ("custom_foods", custom_foods),
+            ("custom_slash_commands", custom_slash_commands),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self.call("/v1/omnibar/suggest", payload, receipt=receipt, signing_secret=signing_secret)
+
+    def parse_omnibar_batch(
+        self,
+        *,
+        inputs: List[str],
+        now: Optional[str] = None,
+        timezone: Optional[str] = None,
+        default_currency: Optional[str] = None,
+        locale: Optional[str] = None,
+        last_answer: Optional[float] = None,
+        user_weight_kg: Optional[float] = None,
+        fx_rates: Optional[Dict[str, float]] = None,
+        domains: Optional[List[str]] = None,
+        projects: Optional[List[Dict[str, Any]]] = None,
+        custom_routes: Optional[List[Dict[str, Any]]] = None,
+        macros: Optional[Dict[str, str]] = None,
+        wake_words: Optional[List[str]] = None,
+        snapshot: Optional[Dict[str, Any]] = None,
+        previous_intent: Optional[Dict[str, Any]] = None,
+        custom_foods: Optional[List[Dict[str, Any]]] = None,
+        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
+        allow_compound: Optional[bool] = None,
+        include_tokens: Optional[bool] = None,
+        include_spans: Optional[bool] = None,
+        include_alternatives: Optional[bool] = None,
+        include_sentiment: Optional[bool] = None,
+        include_ics: Optional[bool] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """43 — Stateless Sequential Omnibar Batch Parser (`POST /v1/omnibar/batch`)."""
+        payload: Dict[str, Any] = {"inputs": inputs}
+        for key, value in (
+            ("now", now),
+            ("timezone", timezone),
+            ("default_currency", default_currency),
+            ("locale", locale),
+            ("last_answer", last_answer),
+            ("user_weight_kg", user_weight_kg),
+            ("fx_rates", fx_rates),
+            ("domains", domains),
+            ("projects", projects),
+            ("custom_routes", custom_routes),
+            ("macros", macros),
+            ("wake_words", wake_words),
+            ("snapshot", snapshot),
+            ("previous_intent", previous_intent),
+            ("custom_foods", custom_foods),
+            ("custom_slash_commands", custom_slash_commands),
+            ("allow_compound", allow_compound),
+            ("include_tokens", include_tokens),
+            ("include_spans", include_spans),
+            ("include_alternatives", include_alternatives),
+            ("include_sentiment", include_sentiment),
+            ("include_ics", include_ics),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self.call("/v1/omnibar/batch", payload, receipt=receipt, signing_secret=signing_secret)
+
     def list_omnibar_intents(self) -> Dict[str, Any]:
-        """43 — List all 42 supported Omnibar NLP intents (`GET /v1/omnibar/intents`)."""
+        """43 — List all 46 supported Omnibar NLP intents (`GET /v1/omnibar/intents`)."""
         return self._request("GET", "/v1/omnibar/intents")
 
     def estimate_nutrition(
         self,
         *,
         text: str,
+        servings: Optional[int] = None,
+        custom_foods: Optional[List[Dict[str, Any]]] = None,
         receipt: Optional[bool] = None,
         signing_secret: Optional[str] = None,
     ) -> Dict[str, Any]:
         """44 — Offline Natural-Language Meal Nutrition & Macros API (`POST /v1/nutrition/estimate`)."""
-        return self.call("/v1/nutrition/estimate", {"text": text}, receipt=receipt, signing_secret=signing_secret)
+        payload: Dict[str, Any] = {"text": text}
+        if servings is not None:
+            payload["servings"] = servings
+        if custom_foods is not None:
+            payload["custom_foods"] = custom_foods
+        return self.call("/v1/nutrition/estimate", payload, receipt=receipt, signing_secret=signing_secret)
 
     def estimate_calories_burned(
         self,
@@ -1017,6 +1132,34 @@ class TinplateClient:
         if weight_kg is not None:
             payload["weight_kg"] = weight_kg
         return self.call("/v1/nutrition/calories-burned", payload, receipt=receipt, signing_secret=signing_secret)
+
+    def calculate_nutrition_targets(
+        self,
+        *,
+        weight_kg: Optional[float] = None,
+        height_cm: Optional[float] = None,
+        age_years: Optional[int] = None,
+        sex: Optional[str] = None,
+        activity_level: Optional[str] = None,
+        goal: Optional[str] = None,
+        target_calories: Optional[float] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """44 — Offline Mifflin-St Jeor BMR/TDEE, Macro Split & Hydration Target Coach (`POST /v1/nutrition/targets`)."""
+        payload: Dict[str, Any] = {}
+        for key, value in (
+            ("weight_kg", weight_kg),
+            ("height_cm", height_cm),
+            ("age_years", age_years),
+            ("sex", sex),
+            ("activity_level", activity_level),
+            ("goal", goal),
+            ("target_calories", target_calories),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self.call("/v1/nutrition/targets", payload, receipt=receipt, signing_secret=signing_secret)
 
     def guard_llm_turn(
         self,

@@ -86,17 +86,32 @@ describe("@tinplate/sdk TinplateClient", () => {
 
     const intents = await client.listOmnibarIntents();
     expect(intents.ok).toBe(true);
-    expect(intents.data.total_intents).toBe(42);
+    expect(intents.data.total_intents).toBe(46);
 
     const parsed = await client.parseOmnibar({
       text: "spent €14.50 on lunch yesterday",
       now: "2026-11-22T12:00:00Z",
       timezone: "Europe/Berlin",
+      include_spans: true,
       include_sentiment: true,
     });
     expect(parsed.ok).toBe(true);
     expect(parsed.data.kind).toBe("expense");
     expect(parsed.data.needs_llm).toBe(false);
+    expect(parsed.data.spans && parsed.data.spans.length > 0).toBe(true);
+
+    const suggested = await client.suggestOmnibar({ text: "ate sal", limit: 5 });
+    expect(suggested.ok).toBe(true);
+    expect(suggested.data.completions.length).toBeGreaterThan(0);
+
+    const batch = await client.parseOmnibarBatch({
+      inputs: ["spent €14.50 on lunch", "actually make it €18.50"],
+      now: "2026-11-22T12:00:00Z",
+      timezone: "Europe/Berlin",
+    });
+    expect(batch.ok).toBe(true);
+    expect(batch.data.total).toBe(2);
+    expect(batch.data.results[1]?.kind).toBe("patch_last");
 
     const meal = await client.estimateNutrition({
       text: "200g chicken breast and 1 avocado",
@@ -104,6 +119,7 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(meal.ok).toBe(true);
     expect(meal.data.estimated).toBe(true);
     expect(meal.data.calories).toBeGreaterThan(400);
+    expect(typeof meal.data.satiety_score).toBe("number");
 
     const burn = await client.estimateCaloriesBurned({
       activity: "running",
@@ -113,6 +129,18 @@ describe("@tinplate/sdk TinplateClient", () => {
     expect(burn.ok).toBe(true);
     expect(burn.data.matched).toBe(true);
     expect(burn.data.total_calories).toBeGreaterThan(200);
+
+    const targets = await client.calculateNutritionTargets({
+      weight_kg: 78,
+      height_cm: 180,
+      age_years: 28,
+      sex: "male",
+      activity_level: "moderate",
+      goal: "cut",
+    });
+    expect(targets.ok).toBe(true);
+    expect(targets.data.target_calories).toBeGreaterThan(1500);
+    expect(targets.data.protein_g).toBeGreaterThan(100);
 
     const turn = await client.guardLlmTurn({
       userPrompt: "Summarize invoice for alice@acme.eu",
