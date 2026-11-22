@@ -1,6 +1,6 @@
 # tinplate
 
-Zero-dependency Python SDK for the **Tinplate** 32-API AI Safety, Security, and Format Validation Edge Gateway (`https://api.tinplate.dev`).
+Zero-dependency Python SDK for the **Tinplate** 34-API AI Safety, Security, Omnibar NLP, Nutrition & Format Validation Edge Gateway (`https://api.tinplate.dev`).
 
 Uses only the Python standard library (`urllib.request`, `json`) — works in Python 3.9+, FastAPI, LangChain, AWS Lambda, and scripts.
 

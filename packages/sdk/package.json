@@ -1,7 +1,7 @@
 {
   "name": "@tinplate/sdk",
-  "version": "1.1.8",
-  "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate 32-API AI Safety, Security & Format Validation Edge Gateway.",
+  "version": "1.1.9",
+  "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate 34-API AI Safety, Security, Omnibar NLP & Data Validation Edge Gateway.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

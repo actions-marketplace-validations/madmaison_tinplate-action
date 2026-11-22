@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.8")
+        self.assertEqual(__version__, "1.1.9")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
@@ -25,7 +25,7 @@ class TestTinplateClient(unittest.TestCase):
         self.assertEqual(client.headers["X-RapidAPI-Key"], "rk_123")
         self.assertEqual(client.headers["X-RapidAPI-Host"], "example.p.rapidapi.com")
         self.assertEqual(client.headers["X-Tinplate-Receipt-Request"], "true")
-        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.8")
+        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.9")
 
     def test_headers_bearer_and_error(self) -> None:
         client = TinplateClient(api_key="tok_abc")
@@ -46,8 +46,32 @@ class TestTinplateClient(unittest.TestCase):
             self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/eu-vat-iban/iban?receipt=true")
             self.assertEqual(json.loads(req.data.decode("utf-8")), {"iban": "DE89370400440532013000"})
 
-        for method in ("scan_secrets", "guard_llm_output", "ua_bot_parser", "guard_command_sql", "issue_action_receipt", "guard_llm_turn", "health", "list_presets"):
+        for method in ("scan_secrets", "guard_llm_output", "ua_bot_parser", "guard_command_sql", "issue_action_receipt", "guard_llm_turn", "health", "list_presets", "parse_omnibar", "list_omnibar_intents", "estimate_nutrition", "estimate_calories_burned"):
             self.assertTrue(callable(getattr(client, method)), f"Missing {method}")
+
+        with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
+            client.parse_omnibar(text="spent €14.50 on lunch", timezone="Europe/Berlin", include_sentiment=True)
+            req = mock_open.call_args[0][0]
+            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/omnibar/parse?receipt=true")
+            self.assertEqual(
+                json.loads(req.data.decode("utf-8")),
+                {"text": "spent €14.50 on lunch", "timezone": "Europe/Berlin", "include_sentiment": True},
+            )
+
+            client.list_omnibar_intents()
+            self.assertEqual(mock_open.call_args[0][0].full_url, "https://api.tinplate.dev/v1/omnibar/intents")
+
+            client.estimate_nutrition(text="200g chicken breast")
+            self.assertEqual(
+                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
+                {"text": "200g chicken breast"},
+            )
+
+            client.estimate_calories_burned(activity="running", duration_minutes=30, weight_kg=75)
+            self.assertEqual(
+                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
+                {"activity": "running", "duration_minutes": 30, "weight_kg": 75},
+            )
 
     def test_https_enforcement_and_updated_signatures(self) -> None:
         with self.assertRaises(TinplateError) as ctx:

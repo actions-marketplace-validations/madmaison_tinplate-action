@@ -1,4 +1,4 @@
-"""Zero-dependency HTTP client for the Tinplate 32-API Edge Gateway."""
+"""Zero-dependency HTTP client for the Tinplate 34-API Edge Gateway."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-_SDK_VERSION = "1.1.8"
+_SDK_VERSION = "1.1.9"
 
 _STDLIB_URLOPEN = urllib.request.urlopen
 _SCHEME_PREFIX_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
@@ -945,6 +945,78 @@ class TinplateClient:
     def clean_tabular_rag(self, **kwargs: Any) -> Dict[str, Any]:
         """38 — Tabular CSV/JSON RAG Cleaner API."""
         return self._call_kwargs("/v1/tabular-rag-cleaner", kwargs)
+
+    def parse_omnibar(
+        self,
+        *,
+        text: str,
+        now: Optional[str] = None,
+        timezone: Optional[str] = None,
+        last_answer: Optional[float] = None,
+        user_weight_kg: Optional[float] = None,
+        domains: Optional[List[str]] = None,
+        projects: Optional[List[Dict[str, Any]]] = None,
+        custom_routes: Optional[List[Dict[str, Any]]] = None,
+        macros: Optional[Dict[str, str]] = None,
+        wake_words: Optional[List[str]] = None,
+        allow_compound: Optional[bool] = None,
+        include_tokens: Optional[bool] = None,
+        include_alternatives: Optional[bool] = None,
+        include_sentiment: Optional[bool] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """43 — Natural Language Command, Intent & Agent Router API (`POST /v1/omnibar/parse`)."""
+        payload: Dict[str, Any] = {"text": text}
+        for key, value in (
+            ("now", now),
+            ("timezone", timezone),
+            ("last_answer", last_answer),
+            ("user_weight_kg", user_weight_kg),
+            ("domains", domains),
+            ("projects", projects),
+            ("custom_routes", custom_routes),
+            ("macros", macros),
+            ("wake_words", wake_words),
+            ("allow_compound", allow_compound),
+            ("include_tokens", include_tokens),
+            ("include_alternatives", include_alternatives),
+            ("include_sentiment", include_sentiment),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self.call("/v1/omnibar/parse", payload, receipt=receipt, signing_secret=signing_secret)
+
+    def list_omnibar_intents(self) -> Dict[str, Any]:
+        """43 — List all 42 supported Omnibar NLP intents (`GET /v1/omnibar/intents`)."""
+        return self._request("GET", "/v1/omnibar/intents")
+
+    def estimate_nutrition(
+        self,
+        *,
+        text: str,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """44 — Offline Natural-Language Meal Nutrition & Macros API (`POST /v1/nutrition/estimate`)."""
+        return self.call("/v1/nutrition/estimate", {"text": text}, receipt=receipt, signing_secret=signing_secret)
+
+    def estimate_calories_burned(
+        self,
+        *,
+        activity: str,
+        duration_minutes: Optional[float] = None,
+        weight_kg: Optional[float] = None,
+        receipt: Optional[bool] = None,
+        signing_secret: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """44 — Offline Compendium MET Calories Burned API (`POST /v1/nutrition/calories-burned`)."""
+        payload: Dict[str, Any] = {"activity": activity}
+        if duration_minutes is not None:
+            payload["duration_minutes"] = duration_minutes
+        if weight_kg is not None:
+            payload["weight_kg"] = weight_kg
+        return self.call("/v1/nutrition/calories-burned", payload, receipt=receipt, signing_secret=signing_secret)
 
     def guard_llm_turn(
         self,

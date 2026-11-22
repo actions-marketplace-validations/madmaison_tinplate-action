@@ -1,4 +1,4 @@
-"""Zero-dependency Python SDK for the Tinplate 32-API Edge Gateway."""
+"""Zero-dependency Python SDK for the Tinplate 34-API Edge Gateway."""
 
 from .adapters import (
     TinplateCrewAIGuardrail,
@@ -26,4 +26,4 @@ __all__ = [
     "as_pydantic_ai_tools",
     "guard_pydantic_ai_prompt",
 ]
-__version__ = "1.1.8"
+__version__ = "1.1.9"
