@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.9")
+        self.assertEqual(__version__, "1.1.10")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
@@ -25,7 +25,7 @@ class TestTinplateClient(unittest.TestCase):
         self.assertEqual(client.headers["X-RapidAPI-Key"], "rk_123")
         self.assertEqual(client.headers["X-RapidAPI-Host"], "example.p.rapidapi.com")
         self.assertEqual(client.headers["X-Tinplate-Receipt-Request"], "true")
-        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.9")
+        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.10")
 
     def test_headers_bearer_and_error(self) -> None:
         client = TinplateClient(api_key="tok_abc")
@@ -46,31 +46,107 @@ class TestTinplateClient(unittest.TestCase):
             self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/eu-vat-iban/iban?receipt=true")
             self.assertEqual(json.loads(req.data.decode("utf-8")), {"iban": "DE89370400440532013000"})
 
-        for method in ("scan_secrets", "guard_llm_output", "ua_bot_parser", "guard_command_sql", "issue_action_receipt", "guard_llm_turn", "health", "list_presets", "parse_omnibar", "list_omnibar_intents", "estimate_nutrition", "estimate_calories_burned"):
+        for method in (
+            "scan_secrets",
+            "guard_llm_output",
+            "ua_bot_parser",
+            "guard_command_sql",
+            "issue_action_receipt",
+            "guard_llm_turn",
+            "health",
+            "list_presets",
+            "parse_omnibar",
+            "suggest_omnibar",
+            "parse_omnibar_batch",
+            "list_omnibar_intents",
+            "estimate_nutrition",
+            "estimate_calories_burned",
+            "calculate_nutrition_targets",
+        ):
             self.assertTrue(callable(getattr(client, method)), f"Missing {method}")
 
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            client.parse_omnibar(text="spent €14.50 on lunch", timezone="Europe/Berlin", include_sentiment=True)
+            client.parse_omnibar(
+                text="spent €14.50 on lunch",
+                timezone="Europe/Berlin",
+                include_spans=True,
+                include_sentiment=True,
+            )
             req = mock_open.call_args[0][0]
             self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/omnibar/parse?receipt=true")
             self.assertEqual(
                 json.loads(req.data.decode("utf-8")),
-                {"text": "spent €14.50 on lunch", "timezone": "Europe/Berlin", "include_sentiment": True},
+                {
+                    "text": "spent €14.50 on lunch",
+                    "timezone": "Europe/Berlin",
+                    "include_spans": True,
+                    "include_sentiment": True,
+                },
+            )
+
+            client.suggest_omnibar(text="ate sal", limit=6)
+            self.assertEqual(
+                mock_open.call_args[0][0].full_url,
+                "https://api.tinplate.dev/v1/omnibar/suggest?receipt=true",
+            )
+            self.assertEqual(
+                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
+                {"text": "ate sal", "limit": 6},
+            )
+
+            client.parse_omnibar_batch(
+                inputs=["spent €14.50 on lunch", "actually make it €18.50"],
+                timezone="Europe/Berlin",
+            )
+            self.assertEqual(
+                mock_open.call_args[0][0].full_url,
+                "https://api.tinplate.dev/v1/omnibar/batch?receipt=true",
+            )
+            self.assertEqual(
+                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
+                {
+                    "inputs": ["spent €14.50 on lunch", "actually make it €18.50"],
+                    "timezone": "Europe/Berlin",
+                },
             )
 
             client.list_omnibar_intents()
             self.assertEqual(mock_open.call_args[0][0].full_url, "https://api.tinplate.dev/v1/omnibar/intents")
 
-            client.estimate_nutrition(text="200g chicken breast")
+            client.estimate_nutrition(text="200g chicken breast", servings=2)
             self.assertEqual(
                 json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {"text": "200g chicken breast"},
+                {"text": "200g chicken breast", "servings": 2},
             )
 
             client.estimate_calories_burned(activity="running", duration_minutes=30, weight_kg=75)
             self.assertEqual(
                 json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
                 {"activity": "running", "duration_minutes": 30, "weight_kg": 75},
+            )
+
+            client.calculate_nutrition_targets(
+                weight_kg=78,
+                height_cm=180,
+                age_years=28,
+                sex="male",
+                activity_level="moderate",
+                goal="cut",
+            )
+            self.assertEqual(
+                mock_open.call_args[0][0].full_url,
+                "https://api.tinplate.dev/v1/nutrition/targets?receipt=true",
+            )
+            self.assertEqual(
+                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
+                {
+                    "weight_kg": 78,
+                    "height_cm": 180,
+                    "age_years": 28,
+                    "sex": "male",
+                    "activity_level": "moderate",
+                    "goal": "cut",
+                },
             )
 
     def test_https_enforcement_and_updated_signatures(self) -> None:
