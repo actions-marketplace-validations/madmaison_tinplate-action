@@ -1,6 +1,6 @@
 # @tinplate/sdk
 
-Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 32-API AI Safety, Security, and Format Validation Edge Gateway (`https://api.tinplate.dev`).
+Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 34-API AI Safety, Security, Omnibar NLP, Nutrition & Format Validation Edge Gateway (`https://api.tinplate.dev`).
 
 Works in Node.js 18+, Cloudflare Workers, Deno, Bun, and Next.js Edge Runtime using standard `fetch`.
 

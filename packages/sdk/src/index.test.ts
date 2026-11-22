@@ -84,6 +84,36 @@ describe("@tinplate/sdk TinplateClient", () => {
     });
     expect(hal.ok).toBe(true);
 
+    const intents = await client.listOmnibarIntents();
+    expect(intents.ok).toBe(true);
+    expect(intents.data.total_intents).toBe(42);
+
+    const parsed = await client.parseOmnibar({
+      text: "spent €14.50 on lunch yesterday",
+      now: "2026-11-22T12:00:00Z",
+      timezone: "Europe/Berlin",
+      include_sentiment: true,
+    });
+    expect(parsed.ok).toBe(true);
+    expect(parsed.data.kind).toBe("expense");
+    expect(parsed.data.needs_llm).toBe(false);
+
+    const meal = await client.estimateNutrition({
+      text: "200g chicken breast and 1 avocado",
+    });
+    expect(meal.ok).toBe(true);
+    expect(meal.data.estimated).toBe(true);
+    expect(meal.data.calories).toBeGreaterThan(400);
+
+    const burn = await client.estimateCaloriesBurned({
+      activity: "running",
+      duration_minutes: 30,
+      weight_kg: 75,
+    });
+    expect(burn.ok).toBe(true);
+    expect(burn.data.matched).toBe(true);
+    expect(burn.data.total_calories).toBeGreaterThan(200);
+
     const turn = await client.guardLlmTurn({
       userPrompt: "Summarize invoice for alice@acme.eu",
       generate: async (safePrompt) => `Summary for ${safePrompt}`,

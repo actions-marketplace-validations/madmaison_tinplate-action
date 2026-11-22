@@ -1061,6 +1061,125 @@ export class TinplateClient {
     return this.call("/v1/tabular-rag-cleaner", input, options);
   }
 
+  /** 43 — Natural Language Command, Intent & Agent Router API (`POST /v1/omnibar/parse`) */
+  parseOmnibar(
+    input: {
+      text: string;
+      now?: string;
+      timezone?: string;
+      last_answer?: number;
+      user_weight_kg?: number;
+      domains?: Array<
+        | "tasks"
+        | "money"
+        | "body"
+        | "calc"
+        | "query"
+        | "knowledge"
+        | "media"
+        | "workspace"
+        | "navigation"
+        | "ai"
+      >;
+      projects?: Array<{ id: string; name: string; archived?: boolean }>;
+      custom_routes?: Array<{
+        id: string;
+        title: string;
+        space?: string;
+        subTab?: string;
+        keywords?: string[];
+      }>;
+      macros?: Record<string, string>;
+      wake_words?: string[];
+      allow_compound?: boolean;
+      include_tokens?: boolean;
+      include_alternatives?: boolean;
+      include_sentiment?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      kind: string;
+      confidence: number;
+      matched_by: string;
+      needs_llm: boolean;
+      summary: string;
+      normalized_input: string;
+      intent: Record<string, unknown>;
+      macro_trigger?: string;
+      near_miss_hint?: { label: string; corrected_raw: string };
+      tokens?: Array<{ text: string; kind: string }>;
+      alternatives?: Array<{ label: string; intent: Record<string, unknown> }>;
+      sentiment?: {
+        polarity: "positive" | "negative" | "neutral" | "mixed";
+        score: number;
+        mood: string;
+        urgency: "low" | "normal" | "high";
+        signals: string[];
+      };
+    }>("/v1/omnibar/parse", input, options);
+  }
+
+  /** 43 — List all 42 supported Omnibar NLP intents (`GET /v1/omnibar/intents`, public) */
+  listOmnibarIntents() {
+    return this.requestWithRetry<{
+      total_intents: number;
+      domains: string[];
+      intents: Array<{
+        kind: string;
+        domain: string;
+        description: string;
+        examples: string[];
+      }>;
+    }>("GET", "/v1/omnibar/intents");
+  }
+
+  /** 44 — Offline Natural-Language Meal Nutrition & Macros API (`POST /v1/nutrition/estimate`) */
+  estimateNutrition(
+    input: {
+      text: string;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      estimated: boolean;
+      serving_size_g: number;
+      calories: number;
+      protein_g: number;
+      carbohydrates_total_g: number;
+      fat_total_g: number;
+      fat_saturated_g: number;
+      fiber_g: number;
+      sugar_g: number;
+      sodium_mg: number;
+      potassium_mg: number;
+      cholesterol_mg: number;
+      items: Array<Record<string, unknown>>;
+      unmatched_segments: string[];
+    }>("/v1/nutrition/estimate", input, options);
+  }
+
+  /** 44 — Offline Compendium MET Calories Burned API (`POST /v1/nutrition/calories-burned`) */
+  estimateCaloriesBurned(
+    input: {
+      activity: string;
+      duration_minutes?: number;
+      weight_kg?: number;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call<{
+      matched: boolean;
+      name: string | null;
+      met: number | null;
+      weight_kg: number;
+      duration_minutes: number;
+      calories_per_hour: number;
+      total_calories: number;
+      exercise: Record<string, unknown> | null;
+    }>("/v1/nutrition/calories-burned", input, options);
+  }
+
   private async runInputGuardrail(input: {
     text: string;
     locales?: string[] | undefined;
