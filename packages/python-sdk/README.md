@@ -88,8 +88,8 @@ preset = client.preset("llm-ingest-safe", {
 - Public GitHub Repository & Issues: https://github.com/tinspace/tinplate-action
 - PyPI Package: https://pypi.org/project/tinplate/
 - TypeScript / JS SDK (npm): https://www.npmjs.com/package/@tinplate/sdk
-- Hosted MCP Server: https://api.tinplate.dev/mcp (7 free tools keyless at 8 KB / 20 req/min, plus 10 x402 USDC pay-per-call tools; all 23 tools with a Polar subscription)
-- Full API Catalog (19 APIs / 23 endpoints): https://tinplate.dev/#apis
+- Hosted MCP Server: https://api.tinplate.dev/mcp (7 free tools keyless at 8 KB / 20 req/min, plus 17 x402 USDC pay-per-call tools; all 30 tools with a Polar subscription)
+- Full API Catalog (26 APIs / 30 endpoints): https://tinplate.dev/#apis
 - Public Receipt Key Discovery (JWKS): https://api.tinplate.dev/.well-known/jwks.json
 - Interactive Live Sandbox: https://tinplate.dev/tools
 - SDK, MCP Config Generator & Framework Guides: https://tinplate.dev/sdk#config-generator
