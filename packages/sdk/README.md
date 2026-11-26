@@ -1,6 +1,6 @@
 # @tinplate/sdk
 
-Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 34-API AI Safety, Security, Omnibar NLP, Nutrition & Format Validation Edge Gateway (`https://api.tinplate.dev`).
+Zero-dependency TypeScript & JavaScript SDK for the **Tinplate** 26-API Offline AI Agent Security & Guardrails Edge Gateway (`https://api.tinplate.dev`).
 
 Works in Node.js 18+, Cloudflare Workers, Deno, Bun, and Next.js Edge Runtime using standard `fetch`.
 
@@ -88,11 +88,11 @@ const preset = await tinplate.preset("llm-ingest-safe", {
 
 - Support Email: support@tinplate.dev (https://tinplate.dev/support)
 - Security & PGP Disclosure: security@tinplate.dev (https://tinplate.dev/security)
-- Public GitHub Repository & Issues: https://github.com/madmaison/tinplate-action
+- Public GitHub Repository & Issues: https://github.com/tinspace/tinplate-action
 - npm Package: https://www.npmjs.com/package/@tinplate/sdk
 - Python SDK (PyPI): https://pypi.org/project/tinplate/
-- Hosted MCP Server: https://api.tinplate.dev/mcp (7 free tools keyless at 8 KB / 20 req/min, plus 16 x402 USDC pay-per-call tools; all 45 tools with a Polar subscription)
-- Full API Catalog (34 APIs / 45 endpoints): https://tinplate.dev/#apis
+- Hosted MCP Server: https://api.tinplate.dev/mcp (7 free tools keyless at 8 KB / 20 req/min, plus 17 x402 USDC pay-per-call tools; all 30 tools with a Polar subscription)
+- Full API Catalog (26 APIs / 30 endpoints): https://tinplate.dev/#apis
 - Public Receipt Key Discovery (JWKS): https://api.tinplate.dev/.well-known/jwks.json
 - Interactive Live Sandbox: https://tinplate.dev/tools
 - SDK, MCP Config Generator & Framework Guides: https://tinplate.dev/sdk#config-generator

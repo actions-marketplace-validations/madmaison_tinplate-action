@@ -1,4 +1,4 @@
-"""Zero-dependency HTTP client for the Tinplate 34-API Edge Gateway."""
+"""Zero-dependency HTTP client for the Tinplate 26-API Offline AI Security Edge Gateway."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-_SDK_VERSION = "1.1.10"
+_SDK_VERSION = "2.0.0"
 
 _STDLIB_URLOPEN = urllib.request.urlopen
 _SCHEME_PREFIX_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
@@ -714,123 +714,6 @@ class TinplateClient:
             signing_secret=signing_secret,
         )
 
-    def validate_iban(
-        self,
-        *,
-        iban: str,
-        bic: Optional[str] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """05 — EU IBAN & BIC Validator API."""
-        payload: Dict[str, Any] = {"iban": iban}
-        if bic is not None:
-            payload["bic"] = bic
-        return self.call("/v1/eu-vat-iban/iban", payload, receipt=receipt, signing_secret=signing_secret)
-
-    def validate_vat(
-        self,
-        *,
-        vat_number: str,
-        verify_vies: Optional[bool] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """05 — EU VAT Number Format Validator API (offline syntax/checksum only)."""
-        payload: Dict[str, Any] = {"vat_number": vat_number}
-        if verify_vies is not None:
-            payload["verify_vies"] = verify_vies
-        return self.call(
-            "/v1/eu-vat-iban/vat",
-            payload,
-            receipt=receipt,
-            signing_secret=signing_secret,
-        )
-
-    def email_dns(self, **kwargs: Any) -> Dict[str, Any]:
-        """06 — Email DNS & Deliverability Audit API."""
-        return self._call_kwargs("/v1/email-dns", kwargs)
-
-    def ua_bot_parser(
-        self,
-        *,
-        user_agent: str,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """08 — User-Agent & AI Bot Parser API."""
-        return self.call(
-            "/v1/ua-bot-parser",
-            {"user_agent": user_agent},
-            receipt=receipt,
-            signing_secret=signing_secret,
-        )
-
-    def workdays_between(
-        self,
-        *,
-        country: str,
-        start_date: str,
-        end_date: str,
-        include_start: Optional[bool] = None,
-        include_end: Optional[bool] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """09 — EU Workdays Between Dates API."""
-        payload: Dict[str, Any] = {
-            "country": country,
-            "start_date": start_date,
-            "end_date": end_date,
-        }
-        if include_start is not None:
-            payload["include_start"] = include_start
-        if include_end is not None:
-            payload["include_end"] = include_end
-        return self.call(
-            "/v1/workday-holiday/between",
-            payload,
-            receipt=receipt,
-            signing_secret=signing_secret,
-        )
-
-    def add_workdays(
-        self,
-        *,
-        country: str,
-        date: str,
-        days: int,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """09 — Add EU Workdays API."""
-        return self.call(
-            "/v1/workday-holiday/add",
-            {"country": country, "date": date, "days": days},
-            receipt=receipt,
-            signing_secret=signing_secret,
-        )
-
-    def is_workday(
-        self,
-        *,
-        country: str,
-        date: str,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """09 — Check EU Workday API."""
-        return self.call(
-            "/v1/workday-holiday/is-workday",
-            {"country": country, "date": date},
-            receipt=receipt,
-            signing_secret=signing_secret,
-        )
-
-    def schema_diff(self, **kwargs: Any) -> Dict[str, Any]:
-        """11 — JSON Schema Breaking-Change Diff API."""
-        return self._call_kwargs("/v1/schema-diff", kwargs)
-
     def ssrf_firewall(self, **kwargs: Any) -> Dict[str, Any]:
         """13 — Outbound SSRF Firewall API."""
         return self._call_kwargs("/v1/ssrf-firewall", kwargs)
@@ -867,41 +750,13 @@ class TinplateClient:
         """17 — LLM Tool-Call Validator & Repair API."""
         return self._call_kwargs("/v1/tool-call-validator", kwargs)
 
-    def explain_cron(self, **kwargs: Any) -> Dict[str, Any]:
-        """18 — Cron Expression Explainer API."""
-        return self._call_kwargs("/v1/cron-explainer", kwargs)
-
     def lint_mcp_manifest(self, **kwargs: Any) -> Dict[str, Any]:
         """19 — MCP Manifest Security Linter API."""
         return self._call_kwargs("/v1/mcp-manifest-linter", kwargs)
 
-    def normalize_url(self, **kwargs: Any) -> Dict[str, Any]:
-        """21 — URL Normalizer & Tracking Stripper API."""
-        return self._call_kwargs("/v1/url-normalizer", kwargs)
-
-    def parse_locale_values(self, **kwargs: Any) -> Dict[str, Any]:
-        """22 — Locale Number, Currency & Date Parser API."""
-        return self._call_kwargs("/v1/locale-value-parser", kwargs)
-
-    def validate_hu_business(self, **kwargs: Any) -> Dict[str, Any]:
-        """23 — Hungarian Business & Tax ID Validator API."""
-        return self._call_kwargs("/v1/hu-business-validator", kwargs)
-
-    def generate_email_dns(self, **kwargs: Any) -> Dict[str, Any]:
-        """24 — SPF/DKIM/DMARC Record Generator API."""
-        return self._call_kwargs("/v1/email-dns-generator", kwargs)
-
-    def sanitize_ics(self, **kwargs: Any) -> Dict[str, Any]:
-        """25 — ICS Calendar Feed Sanitizer API."""
-        return self._call_kwargs("/v1/ics-sanitizer", kwargs)
-
     def judge_semver_lockfile(self, **kwargs: Any) -> Dict[str, Any]:
         """27 — Semver & Lockfile Risk Judge API."""
         return self._call_kwargs("/v1/semver-lockfile-judge", kwargs)
-
-    def budget_prompt_cache(self, **kwargs: Any) -> Dict[str, Any]:
-        """28 — LLM Prompt Cache & Token Budgeter API."""
-        return self._call_kwargs("/v1/prompt-cache-budgeter", kwargs)
 
     def issue_action_receipt(self, **kwargs: Any) -> Dict[str, Any]:
         """29 — Agent Action Receipt Issuer API."""
@@ -923,10 +778,6 @@ class TinplateClient:
         """34 — JWT & JWK Security Inspector API."""
         return self._call_kwargs("/v1/jwt-jwk-inspector", kwargs)
 
-    def chunk_rag(self, **kwargs: Any) -> Dict[str, Any]:
-        """35 — Markdown & Semantic RAG Chunker API."""
-        return self._call_kwargs("/v1/rag-chunker", kwargs)
-
     def analyze_regex_safety(
         self,
         *,
@@ -946,220 +797,33 @@ class TinplateClient:
         """38 — Tabular CSV/JSON RAG Cleaner API."""
         return self._call_kwargs("/v1/tabular-rag-cleaner", kwargs)
 
-    def parse_omnibar(
-        self,
-        *,
-        text: str,
-        now: Optional[str] = None,
-        timezone: Optional[str] = None,
-        default_currency: Optional[str] = None,
-        locale: Optional[str] = None,
-        last_answer: Optional[float] = None,
-        user_weight_kg: Optional[float] = None,
-        fx_rates: Optional[Dict[str, float]] = None,
-        domains: Optional[List[str]] = None,
-        projects: Optional[List[Dict[str, Any]]] = None,
-        custom_routes: Optional[List[Dict[str, Any]]] = None,
-        macros: Optional[Dict[str, str]] = None,
-        wake_words: Optional[List[str]] = None,
-        snapshot: Optional[Dict[str, Any]] = None,
-        previous_intent: Optional[Dict[str, Any]] = None,
-        custom_foods: Optional[List[Dict[str, Any]]] = None,
-        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
-        allow_compound: Optional[bool] = None,
-        include_tokens: Optional[bool] = None,
-        include_spans: Optional[bool] = None,
-        include_alternatives: Optional[bool] = None,
-        include_sentiment: Optional[bool] = None,
-        include_ics: Optional[bool] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """43 — Natural Language Command, Intent & Agent Router API (`POST /v1/omnibar/parse`)."""
-        payload: Dict[str, Any] = {"text": text}
-        for key, value in (
-            ("now", now),
-            ("timezone", timezone),
-            ("default_currency", default_currency),
-            ("locale", locale),
-            ("last_answer", last_answer),
-            ("user_weight_kg", user_weight_kg),
-            ("fx_rates", fx_rates),
-            ("domains", domains),
-            ("projects", projects),
-            ("custom_routes", custom_routes),
-            ("macros", macros),
-            ("wake_words", wake_words),
-            ("snapshot", snapshot),
-            ("previous_intent", previous_intent),
-            ("custom_foods", custom_foods),
-            ("custom_slash_commands", custom_slash_commands),
-            ("allow_compound", allow_compound),
-            ("include_tokens", include_tokens),
-            ("include_spans", include_spans),
-            ("include_alternatives", include_alternatives),
-            ("include_sentiment", include_sentiment),
-            ("include_ics", include_ics),
-        ):
-            if value is not None:
-                payload[key] = value
-        return self.call("/v1/omnibar/parse", payload, receipt=receipt, signing_secret=signing_secret)
+    def rag_poison_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """45 — RAG Chunk & Document Poisoning Guard API."""
+        return self._call_kwargs("/v1/rag-poison-guard", kwargs)
 
-    def suggest_omnibar(
-        self,
-        *,
-        text: str,
-        limit: Optional[int] = None,
-        domains: Optional[List[str]] = None,
-        projects: Optional[List[Dict[str, Any]]] = None,
-        snapshot: Optional[Dict[str, Any]] = None,
-        macros: Optional[Dict[str, str]] = None,
-        custom_routes: Optional[List[Dict[str, Any]]] = None,
-        custom_foods: Optional[List[Dict[str, Any]]] = None,
-        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """43 — Sub-0.2 ms Omnibar Ghost-Text & Ranked Autocomplete (`POST /v1/omnibar/suggest`)."""
-        payload: Dict[str, Any] = {"text": text}
-        for key, value in (
-            ("limit", limit),
-            ("domains", domains),
-            ("projects", projects),
-            ("snapshot", snapshot),
-            ("macros", macros),
-            ("custom_routes", custom_routes),
-            ("custom_foods", custom_foods),
-            ("custom_slash_commands", custom_slash_commands),
-        ):
-            if value is not None:
-                payload[key] = value
-        return self.call("/v1/omnibar/suggest", payload, receipt=receipt, signing_secret=signing_secret)
+    def a2a_card_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """46 — A2A Agent Card Security Auditor API."""
+        return self._call_kwargs("/v1/a2a-card-guard", kwargs)
 
-    def parse_omnibar_batch(
-        self,
-        *,
-        inputs: List[str],
-        now: Optional[str] = None,
-        timezone: Optional[str] = None,
-        default_currency: Optional[str] = None,
-        locale: Optional[str] = None,
-        last_answer: Optional[float] = None,
-        user_weight_kg: Optional[float] = None,
-        fx_rates: Optional[Dict[str, float]] = None,
-        domains: Optional[List[str]] = None,
-        projects: Optional[List[Dict[str, Any]]] = None,
-        custom_routes: Optional[List[Dict[str, Any]]] = None,
-        macros: Optional[Dict[str, str]] = None,
-        wake_words: Optional[List[str]] = None,
-        snapshot: Optional[Dict[str, Any]] = None,
-        previous_intent: Optional[Dict[str, Any]] = None,
-        custom_foods: Optional[List[Dict[str, Any]]] = None,
-        custom_slash_commands: Optional[List[Dict[str, Any]]] = None,
-        allow_compound: Optional[bool] = None,
-        include_tokens: Optional[bool] = None,
-        include_spans: Optional[bool] = None,
-        include_alternatives: Optional[bool] = None,
-        include_sentiment: Optional[bool] = None,
-        include_ics: Optional[bool] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """43 — Stateless Sequential Omnibar Batch Parser (`POST /v1/omnibar/batch`)."""
-        payload: Dict[str, Any] = {"inputs": inputs}
-        for key, value in (
-            ("now", now),
-            ("timezone", timezone),
-            ("default_currency", default_currency),
-            ("locale", locale),
-            ("last_answer", last_answer),
-            ("user_weight_kg", user_weight_kg),
-            ("fx_rates", fx_rates),
-            ("domains", domains),
-            ("projects", projects),
-            ("custom_routes", custom_routes),
-            ("macros", macros),
-            ("wake_words", wake_words),
-            ("snapshot", snapshot),
-            ("previous_intent", previous_intent),
-            ("custom_foods", custom_foods),
-            ("custom_slash_commands", custom_slash_commands),
-            ("allow_compound", allow_compound),
-            ("include_tokens", include_tokens),
-            ("include_spans", include_spans),
-            ("include_alternatives", include_alternatives),
-            ("include_sentiment", include_sentiment),
-            ("include_ics", include_ics),
-        ):
-            if value is not None:
-                payload[key] = value
-        return self.call("/v1/omnibar/batch", payload, receipt=receipt, signing_secret=signing_secret)
+    def x402_spend_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """47 — x402 Agent Payment & Budget Policy Guard API."""
+        return self._call_kwargs("/v1/x402-spend-guard", kwargs)
 
-    def list_omnibar_intents(self) -> Dict[str, Any]:
-        """43 — List all 46 supported Omnibar NLP intents (`GET /v1/omnibar/intents`)."""
-        return self._request("GET", "/v1/omnibar/intents")
+    def mcp_traffic_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """48 — MCP JSON-RPC Traffic & Tool-Call Firewall API."""
+        return self._call_kwargs("/v1/mcp-traffic-guard", kwargs)
 
-    def estimate_nutrition(
-        self,
-        *,
-        text: str,
-        servings: Optional[int] = None,
-        custom_foods: Optional[List[Dict[str, Any]]] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """44 — Offline Natural-Language Meal Nutrition & Macros API (`POST /v1/nutrition/estimate`)."""
-        payload: Dict[str, Any] = {"text": text}
-        if servings is not None:
-            payload["servings"] = servings
-        if custom_foods is not None:
-            payload["custom_foods"] = custom_foods
-        return self.call("/v1/nutrition/estimate", payload, receipt=receipt, signing_secret=signing_secret)
+    def agent_policy_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """49 — Agent Action Policy & Least-Privilege RBAC Firewall API."""
+        return self._call_kwargs("/v1/agent-policy-guard", kwargs)
 
-    def estimate_calories_burned(
-        self,
-        *,
-        activity: str,
-        duration_minutes: Optional[float] = None,
-        weight_kg: Optional[float] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """44 — Offline Compendium MET Calories Burned API (`POST /v1/nutrition/calories-burned`)."""
-        payload: Dict[str, Any] = {"activity": activity}
-        if duration_minutes is not None:
-            payload["duration_minutes"] = duration_minutes
-        if weight_kg is not None:
-            payload["weight_kg"] = weight_kg
-        return self.call("/v1/nutrition/calories-burned", payload, receipt=receipt, signing_secret=signing_secret)
+    def system_prompt_audit(self, **kwargs: Any) -> Dict[str, Any]:
+        """50 — System Prompt Hardening & Leak-Resistance Auditor API."""
+        return self._call_kwargs("/v1/system-prompt-audit", kwargs)
 
-    def calculate_nutrition_targets(
-        self,
-        *,
-        weight_kg: Optional[float] = None,
-        height_cm: Optional[float] = None,
-        age_years: Optional[int] = None,
-        sex: Optional[str] = None,
-        activity_level: Optional[str] = None,
-        goal: Optional[str] = None,
-        target_calories: Optional[float] = None,
-        receipt: Optional[bool] = None,
-        signing_secret: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """44 — Offline Mifflin-St Jeor BMR/TDEE, Macro Split & Hydration Target Coach (`POST /v1/nutrition/targets`)."""
-        payload: Dict[str, Any] = {}
-        for key, value in (
-            ("weight_kg", weight_kg),
-            ("height_cm", height_cm),
-            ("age_years", age_years),
-            ("sex", sex),
-            ("activity_level", activity_level),
-            ("goal", goal),
-            ("target_calories", target_calories),
-        ):
-            if value is not None:
-                payload[key] = value
-        return self.call("/v1/nutrition/targets", payload, receipt=receipt, signing_secret=signing_secret)
+    def iac_container_guard(self, **kwargs: Any) -> Dict[str, Any]:
+        """51 — Dockerfile, Compose & Kubernetes Sandbox Security Auditor API."""
+        return self._call_kwargs("/v1/iac-container-guard", kwargs)
 
     def guard_llm_turn(
         self,

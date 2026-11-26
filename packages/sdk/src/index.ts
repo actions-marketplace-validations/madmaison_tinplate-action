@@ -838,81 +838,6 @@ export class TinplateClient {
     return this.call<{ text: string; restored_count: number }>("/v1/pii-redactor/restore", input, options);
   }
 
-  /** 05 — EU IBAN & BIC Validator API */
-  validateIban(input: { iban: string; bic?: string }, options?: TinplateCallOptions) {
-    return this.call("/v1/eu-vat-iban/iban", input, options);
-  }
-
-  /** 05 — EU VAT Number Format Validator API (offline syntax/checksum only) */
-  validateVat(
-    input: { vat_number: string; verify_vies?: boolean },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/eu-vat-iban/vat", input, options);
-  }
-
-  /** 06 — Email DNS & Deliverability Audit API */
-  emailDns(
-    input: {
-      domain: string;
-      dkim_selectors?: string[];
-      records?: {
-        mx?: string[];
-        txt?: string[];
-        dmarc_txt?: string[];
-        mta_sts_txt?: string[];
-        dkim_txt?: Record<string, string[]>;
-      };
-    },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/email-dns", input, options);
-  }
-
-  /** 08 — User-Agent & AI Bot Parser API */
-  uaBotParser(input: { user_agent: string }, options?: TinplateCallOptions) {
-    return this.call("/v1/ua-bot-parser", input, options);
-  }
-
-  /** 09 — EU Workdays Between Dates API */
-  workdaysBetween(
-    input: {
-      country: string;
-      start_date: string;
-      end_date: string;
-      include_start?: boolean;
-      include_end?: boolean;
-    },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/workday-holiday/between", input, options);
-  }
-
-  /** 09 — Add EU Workdays API */
-  addWorkdays(
-    input: { country: string; date: string; days: number },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/workday-holiday/add", input, options);
-  }
-
-  /** 09 — Check EU Workday API */
-  isWorkday(input: { country: string; date: string }, options?: TinplateCallOptions) {
-    return this.call("/v1/workday-holiday/is-workday", input, options);
-  }
-
-  /** 11 — JSON Schema Breaking-Change Diff API */
-  schemaDiff(
-    input: {
-      before: Record<string, unknown>;
-      after: Record<string, unknown>;
-      mode?: "auto" | "json_schema" | "openapi";
-    },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/schema-diff", input, options);
-  }
-
   /** 13 — Agent URL & SSRF Signal Validator API */
   ssrfFirewall(
     input: {
@@ -961,57 +886,14 @@ export class TinplateClient {
     return this.call("/v1/tool-call-validator", input, options);
   }
 
-  /** 18 — Cron Expression Explainer API */
-  explainCron(
-    input: {
-      expression: string;
-      timezone?: string;
-      count?: number;
-      from_time?: string;
-    },
-    options?: TinplateCallOptions,
-  ) {
-    return this.call("/v1/cron-explainer", input, options);
-  }
-
   /** 19 — MCP Manifest Security Linter API */
   lintMcpManifest(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/mcp-manifest-linter", input, options);
   }
 
-  /** 21 — URL Normalizer & Tracking Stripper API */
-  normalizeUrl(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/url-normalizer", input, options);
-  }
-
-  /** 22 — Locale Number, Currency & Date Parser API */
-  parseLocaleValues(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/locale-value-parser", input, options);
-  }
-
-  /** 23 — Hungarian Business & Tax ID Validator API */
-  validateHuBusiness(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/hu-business-validator", input, options);
-  }
-
-  /** 24 — SPF/DKIM/DMARC Record Generator API */
-  generateEmailDns(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/email-dns-generator", input, options);
-  }
-
-  /** 25 — ICS Calendar Feed Sanitizer API */
-  sanitizeIcs(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/ics-sanitizer", input, options);
-  }
-
   /** 27 — Semver & Lockfile Risk Judge API */
   judgeSemverLockfile(input: Record<string, unknown>, options?: TinplateCallOptions) {
     return this.call("/v1/semver-lockfile-judge", input, options);
-  }
-
-  /** 28 — LLM Prompt Cache & Token Budgeter API */
-  budgetPromptCache(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/prompt-cache-budgeter", input, options);
   }
 
   /** 29 — Agent Action Receipt Issuer API */
@@ -1039,11 +921,6 @@ export class TinplateClient {
     return this.call("/v1/jwt-jwk-inspector", input, options);
   }
 
-  /** 35 — Markdown & Semantic RAG Chunker API */
-  chunkRag(input: Record<string, unknown>, options?: TinplateCallOptions) {
-    return this.call("/v1/rag-chunker", input, options);
-  }
-
   /** 36 — Regex ReDoS Safety Analyzer API */
   analyzeRegexSafety(
     input: {
@@ -1061,333 +938,105 @@ export class TinplateClient {
     return this.call("/v1/tabular-rag-cleaner", input, options);
   }
 
-  /** 43 — Natural Language Command, Intent & Agent Router API (`POST /v1/omnibar/parse`) */
-  parseOmnibar(
+  /** 45 — RAG Chunk & Document Poisoning Guard API */
+  ragPoisonGuard(
     input: {
-      text: string;
-      now?: string;
-      timezone?: string;
-      default_currency?: string;
-      locale?:
-        | "en"
-        | "hu"
-        | "de"
-        | "es"
-        | "fr"
-        | "it"
-        | "pt"
-        | "pl"
-        | "nl"
-        | "sv"
-        | "tr"
-        | "ja"
-        | "zh";
-      last_answer?: number;
-      user_weight_kg?: number;
-      fx_rates?: Record<string, number>;
-      domains?: Array<
-        | "tasks"
-        | "money"
-        | "body"
-        | "calc"
-        | "query"
-        | "knowledge"
-        | "media"
-        | "workspace"
-        | "navigation"
-        | "ai"
-      >;
-      projects?: Array<{ id: string; name: string; archived?: boolean }>;
-      custom_routes?: Array<{
-        id: string;
-        title: string;
-        space?: string;
-        subTab?: string;
-        keywords?: string[];
+      chunks: Array<{
+        id?: string;
+        source?: string;
+        content: string;
+        metadata?: Record<string, unknown>;
       }>;
-      macros?: Record<string, string>;
-      wake_words?: string[];
-      snapshot?: Record<string, unknown>;
-      previous_intent?: Record<string, unknown>;
-      custom_foods?: Array<Record<string, unknown>>;
-      custom_slash_commands?: Array<{
-        command: string;
-        expansion?: string;
-        hint?: string;
-        domain?: string;
-      }>;
-      allow_compound?: boolean;
-      include_tokens?: boolean;
-      include_spans?: boolean;
-      include_alternatives?: boolean;
-      include_sentiment?: boolean;
-      include_ics?: boolean;
+      query?: string;
+      sensitivity?: "low" | "medium" | "high";
+      strip_poisoned?: boolean;
+      check_metadata?: boolean;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      kind: string;
-      confidence: number;
-      matched_by: string;
-      needs_llm: boolean;
-      summary: string;
-      normalized_input: string;
-      detected_locale?: string;
-      intent: Record<string, unknown>;
-      macro_trigger?: string;
-      near_miss_hint?: { label: string; corrected_raw: string };
-      tokens?: Array<{ text: string; kind: string }>;
-      spans?: Array<{
-        field: string;
-        start: number;
-        end: number;
-        text: string;
-        value?: string | number | boolean;
-      }>;
-      alternatives?: Array<{ label: string; intent: Record<string, unknown> }>;
-      sentiment?: {
-        polarity: "positive" | "negative" | "neutral" | "mixed";
-        score: number;
-        mood: string;
-        urgency: "low" | "normal" | "high";
-        signals: string[];
-      };
-      ics?: string;
-    }>("/v1/omnibar/parse", input, options);
+    return this.call("/v1/rag-poison-guard", input, options);
   }
 
-  /** 43 — Sub-0.2 ms Omnibar Ghost-Text & Ranked Autocomplete (`POST /v1/omnibar/suggest`) */
-  suggestOmnibar(
+  /** 46 — A2A Agent Card Security Auditor API */
+  a2aCardGuard(
     input: {
-      text: string;
-      limit?: number;
-      domains?: Array<
-        | "tasks"
-        | "money"
-        | "body"
-        | "calc"
-        | "query"
-        | "knowledge"
-        | "media"
-        | "workspace"
-        | "navigation"
-        | "ai"
-      >;
-      projects?: Array<{ id: string; name: string; archived?: boolean }>;
-      snapshot?: Record<string, unknown>;
-      macros?: Record<string, string>;
-      custom_routes?: Array<{
-        id: string;
-        title: string;
-        space?: string;
-        subTab?: string;
-        keywords?: string[];
-      }>;
-      custom_foods?: Array<Record<string, unknown>>;
-      custom_slash_commands?: Array<{
-        command: string;
-        expansion?: string;
-        hint?: string;
-        domain?: string;
-      }>;
+      agent_card: Record<string, unknown> | string;
+      allowed_hosts?: string[];
+      require_auth?: boolean;
+      require_https?: boolean;
+      strict_schema?: boolean;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      ghost_suffix: string;
-      completions: Array<{
-        text: string;
-        label: string;
-        kind: string;
-        domain: string;
-        score: number;
-      }>;
-    }>("/v1/omnibar/suggest", input, options);
+    return this.call("/v1/a2a-card-guard", input, options);
   }
 
-  /** 43 — Stateless Sequential Omnibar Batch Parser (`POST /v1/omnibar/batch`) */
-  parseOmnibarBatch(
+  /** 47 — x402 Agent Payment & Budget Policy Guard API */
+  x402SpendGuard(
     input: {
-      inputs: string[];
-      now?: string;
-      timezone?: string;
-      default_currency?: string;
-      locale?:
-        | "en"
-        | "hu"
-        | "de"
-        | "es"
-        | "fr"
-        | "it"
-        | "pt"
-        | "pl"
-        | "nl"
-        | "sv"
-        | "tr"
-        | "ja"
-        | "zh";
-      last_answer?: number;
-      user_weight_kg?: number;
-      fx_rates?: Record<string, number>;
-      domains?: Array<
-        | "tasks"
-        | "money"
-        | "body"
-        | "calc"
-        | "query"
-        | "knowledge"
-        | "media"
-        | "workspace"
-        | "navigation"
-        | "ai"
-      >;
-      projects?: Array<{ id: string; name: string; archived?: boolean }>;
-      custom_routes?: Array<{
-        id: string;
-        title: string;
-        space?: string;
-        subTab?: string;
-        keywords?: string[];
-      }>;
-      macros?: Record<string, string>;
-      wake_words?: string[];
-      snapshot?: Record<string, unknown>;
-      previous_intent?: Record<string, unknown>;
-      custom_foods?: Array<Record<string, unknown>>;
-      custom_slash_commands?: Array<{
-        command: string;
-        expansion?: string;
-        hint?: string;
-        domain?: string;
-      }>;
-      allow_compound?: boolean;
-      include_tokens?: boolean;
-      include_spans?: boolean;
-      include_alternatives?: boolean;
-      include_sentiment?: boolean;
-      include_ics?: boolean;
+      payment_required: Record<string, unknown> | string;
+      policy?: Record<string, unknown>;
+      recent_payments?: Array<Record<string, unknown>>;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      total: number;
-      results: Array<{
-        kind: string;
-        confidence: number;
-        matched_by: string;
-        needs_llm: boolean;
-        summary: string;
-        normalized_input: string;
-        detected_locale?: string;
-        intent: Record<string, unknown>;
-        spans?: Array<{
-          field: string;
-          start: number;
-          end: number;
-          text: string;
-          value?: string | number | boolean;
-        }>;
-        ics?: string;
-      }>;
-    }>("/v1/omnibar/batch", input, options);
+    return this.call("/v1/x402-spend-guard", input, options);
   }
 
-  /** 43 — List all 46 supported Omnibar NLP intents (`GET /v1/omnibar/intents`, public) */
-  listOmnibarIntents() {
-    return this.requestWithRetry<{
-      total_intents: number;
-      domains: string[];
-      intents: Array<{
-        kind: string;
-        domain: string;
-        description: string;
-        examples: string[];
-      }>;
-    }>("GET", "/v1/omnibar/intents");
-  }
-
-  /** 44 — Offline Natural-Language Meal Nutrition & Macros API (`POST /v1/nutrition/estimate`) */
-  estimateNutrition(
+  /** 48 — MCP JSON-RPC Traffic & Tool-Call Firewall API */
+  mcpTrafficGuard(
     input: {
-      text: string;
-      servings?: number;
-      custom_foods?: Array<Record<string, unknown>>;
+      message: Record<string, unknown> | Array<Record<string, unknown>> | string;
+      direction?: "auto" | "request" | "response";
+      allowed_tools?: string[];
+      blocked_tools?: string[];
+      allow_sampling?: boolean;
+      check_secrets?: boolean;
+      max_batch_size?: number;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      estimated: boolean;
-      serving_size_g: number;
-      calories: number;
-      protein_g: number;
-      carbohydrates_total_g: number;
-      fat_total_g: number;
-      fat_saturated_g: number;
-      fiber_g: number;
-      sugar_g: number;
-      sodium_mg: number;
-      potassium_mg: number;
-      cholesterol_mg: number;
-      caffeine_mg: number;
-      alcohol_g: number;
-      glycemic_load?: "low" | "medium" | "high";
-      satiety_score?: number;
-      allergens?: string[];
-      dietary_tags?: string[];
-      servings?: number;
-      per_serving?: Record<string, unknown>;
-      items: Array<Record<string, unknown>>;
-      unmatched_segments: string[];
-    }>("/v1/nutrition/estimate", input, options);
+    return this.call("/v1/mcp-traffic-guard", input, options);
   }
 
-  /** 44 — Offline Compendium MET Calories Burned API (`POST /v1/nutrition/calories-burned`) */
-  estimateCaloriesBurned(
+  /** 49 — Agent Action Policy & Least-Privilege RBAC Firewall API */
+  agentPolicyGuard(
     input: {
-      activity: string;
-      duration_minutes?: number;
-      weight_kg?: number;
+      action: Record<string, unknown>;
+      policy: Record<string, unknown>;
+      session_history?: Array<Record<string, unknown>>;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      matched: boolean;
-      name: string | null;
-      met: number | null;
-      weight_kg: number;
-      duration_minutes: number;
-      calories_per_hour: number;
-      total_calories: number;
-      exercise: Record<string, unknown> | null;
-    }>("/v1/nutrition/calories-burned", input, options);
+    return this.call("/v1/agent-policy-guard", input, options);
   }
 
-  /** 44 — Offline Mifflin-St Jeor BMR/TDEE, Macro Split & Hydration Target Coach (`POST /v1/nutrition/targets`) */
-  calculateNutritionTargets(
+  /** 50 — System Prompt Hardening & Leak-Resistance Auditor API */
+  systemPromptAudit(
     input: {
-      weight_kg?: number;
-      height_cm?: number;
-      age_years?: number;
-      sex?: "male" | "female";
-      activity_level?: "sedentary" | "light" | "moderate" | "active" | "very_active";
-      goal?: "cut" | "maintain" | "bulk" | "keto" | "high_protein";
-      target_calories?: number;
+      system_prompt: string;
+      has_tools?: boolean;
+      handles_untrusted_data?: boolean;
+      check_secrets?: boolean;
+      check_pii?: boolean;
     },
     options?: TinplateCallOptions,
   ) {
-    return this.call<{
-      bmr?: number;
-      tdee?: number;
-      target_calories: number;
-      goal: "cut" | "maintain" | "bulk" | "keto" | "high_protein";
-      activity_level?: "sedentary" | "light" | "moderate" | "active" | "very_active";
-      protein_g: number;
-      carbs_g: number;
-      fat_g: number;
-      fiber_g: number;
-      water_target_ml: number;
-      macro_split_pct: { protein: number; carbs: number; fat: number };
-    }>("/v1/nutrition/targets", input, options);
+    return this.call("/v1/system-prompt-audit", input, options);
+  }
+
+  /** 51 — Dockerfile, Compose & Kubernetes Sandbox Security Auditor API */
+  iacContainerGuard(
+    input: {
+      manifest: string;
+      format?: "auto" | "dockerfile" | "docker_compose" | "kubernetes_yaml";
+      allow_root?: boolean;
+      allow_latest_tag?: boolean;
+      check_secrets?: boolean;
+    },
+    options?: TinplateCallOptions,
+  ) {
+    return this.call("/v1/iac-container-guard", input, options);
   }
 
   private async runInputGuardrail(input: {
