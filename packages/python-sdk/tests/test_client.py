@@ -13,7 +13,7 @@ from tinplate import TinplateClient, TinplateError, __version__
 
 class TestTinplateClient(unittest.TestCase):
     def test_version_matches_release(self) -> None:
-        self.assertEqual(__version__, "1.1.10")
+        self.assertEqual(__version__, "2.0.0")
     def test_headers_rapidapi(self) -> None:
         client = TinplateClient(
             base_url="https://example.p.rapidapi.com/",
@@ -25,7 +25,7 @@ class TestTinplateClient(unittest.TestCase):
         self.assertEqual(client.headers["X-RapidAPI-Key"], "rk_123")
         self.assertEqual(client.headers["X-RapidAPI-Host"], "example.p.rapidapi.com")
         self.assertEqual(client.headers["X-Tinplate-Receipt-Request"], "true")
-        self.assertEqual(client.headers["User-Agent"], "tinplate-python/1.1.10")
+        self.assertEqual(client.headers["User-Agent"], "tinplate-python/2.0.0")
 
     def test_headers_bearer_and_error(self) -> None:
         client = TinplateClient(api_key="tok_abc")
@@ -40,114 +40,51 @@ class TestTinplateClient(unittest.TestCase):
         fake_resp.__enter__.return_value = fake_resp
 
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            res = client.validate_iban(iban="DE89370400440532013000")
+            res = client.inspect_jwt_jwk(jwt="eyJhbGciOiJub25lIn0.e30.")
             self.assertTrue(res["ok"])
             req = mock_open.call_args[0][0]
-            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/eu-vat-iban/iban?receipt=true")
-            self.assertEqual(json.loads(req.data.decode("utf-8")), {"iban": "DE89370400440532013000"})
+            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/jwt-jwk-inspector?receipt=true")
+            self.assertEqual(json.loads(req.data.decode("utf-8")), {"jwt": "eyJhbGciOiJub25lIn0.e30."})
 
         for method in (
             "scan_secrets",
             "guard_llm_output",
-            "ua_bot_parser",
+            "lint_mcp_manifest",
             "guard_command_sql",
             "issue_action_receipt",
             "guard_llm_turn",
             "health",
             "list_presets",
-            "parse_omnibar",
-            "suggest_omnibar",
-            "parse_omnibar_batch",
-            "list_omnibar_intents",
-            "estimate_nutrition",
-            "estimate_calories_burned",
-            "calculate_nutrition_targets",
+            "ssrf_firewall",
+            "inspect_jwt_jwk",
+            "judge_semver_lockfile",
+            "clean_tabular_rag",
+            "analyze_regex_safety",
+            "rag_poison_guard",
+            "a2a_card_guard",
+            "x402_spend_guard",
+            "mcp_traffic_guard",
+            "agent_policy_guard",
+            "system_prompt_audit",
+            "iac_container_guard",
         ):
             self.assertTrue(callable(getattr(client, method)), f"Missing {method}")
 
+        expected_routes = [
+            ("rag_poison_guard", "/v1/rag-poison-guard", {"chunks": [{"content": "hello"}]}),
+            ("a2a_card_guard", "/v1/a2a-card-guard", {"agent_card": {"name": "A"}}),
+            ("x402_spend_guard", "/v1/x402-spend-guard", {"payment_required": {"x402Version": 2}}),
+            ("mcp_traffic_guard", "/v1/mcp-traffic-guard", {"message": {"jsonrpc": "2.0"}}),
+            ("agent_policy_guard", "/v1/agent-policy-guard", {"action": {"tool": "a"}, "policy": {}}),
+            ("system_prompt_audit", "/v1/system-prompt-audit", {"system_prompt": "Be safe."}),
+            ("iac_container_guard", "/v1/iac-container-guard", {"manifest": "FROM alpine:3.20"}),
+        ]
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            client.parse_omnibar(
-                text="spent €14.50 on lunch",
-                timezone="Europe/Berlin",
-                include_spans=True,
-                include_sentiment=True,
-            )
-            req = mock_open.call_args[0][0]
-            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/omnibar/parse?receipt=true")
-            self.assertEqual(
-                json.loads(req.data.decode("utf-8")),
-                {
-                    "text": "spent €14.50 on lunch",
-                    "timezone": "Europe/Berlin",
-                    "include_spans": True,
-                    "include_sentiment": True,
-                },
-            )
-
-            client.suggest_omnibar(text="ate sal", limit=6)
-            self.assertEqual(
-                mock_open.call_args[0][0].full_url,
-                "https://api.tinplate.dev/v1/omnibar/suggest?receipt=true",
-            )
-            self.assertEqual(
-                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {"text": "ate sal", "limit": 6},
-            )
-
-            client.parse_omnibar_batch(
-                inputs=["spent €14.50 on lunch", "actually make it €18.50"],
-                timezone="Europe/Berlin",
-            )
-            self.assertEqual(
-                mock_open.call_args[0][0].full_url,
-                "https://api.tinplate.dev/v1/omnibar/batch?receipt=true",
-            )
-            self.assertEqual(
-                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {
-                    "inputs": ["spent €14.50 on lunch", "actually make it €18.50"],
-                    "timezone": "Europe/Berlin",
-                },
-            )
-
-            client.list_omnibar_intents()
-            self.assertEqual(mock_open.call_args[0][0].full_url, "https://api.tinplate.dev/v1/omnibar/intents")
-
-            client.estimate_nutrition(text="200g chicken breast", servings=2)
-            self.assertEqual(
-                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {"text": "200g chicken breast", "servings": 2},
-            )
-
-            client.estimate_calories_burned(activity="running", duration_minutes=30, weight_kg=75)
-            self.assertEqual(
-                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {"activity": "running", "duration_minutes": 30, "weight_kg": 75},
-            )
-
-            client.calculate_nutrition_targets(
-                weight_kg=78,
-                height_cm=180,
-                age_years=28,
-                sex="male",
-                activity_level="moderate",
-                goal="cut",
-            )
-            self.assertEqual(
-                mock_open.call_args[0][0].full_url,
-                "https://api.tinplate.dev/v1/nutrition/targets?receipt=true",
-            )
-            self.assertEqual(
-                json.loads(mock_open.call_args[0][0].data.decode("utf-8")),
-                {
-                    "weight_kg": 78,
-                    "height_cm": 180,
-                    "age_years": 28,
-                    "sex": "male",
-                    "activity_level": "moderate",
-                    "goal": "cut",
-                },
-            )
+            for meth, ep, body in expected_routes:
+                out = getattr(client, meth)(**body)
+                self.assertTrue(out["ok"])
+                req = mock_open.call_args[0][0]
+                self.assertEqual(req.full_url, f"https://api.tinplate.dev{ep}?receipt=true")
 
     def test_https_enforcement_and_updated_signatures(self) -> None:
         with self.assertRaises(TinplateError) as ctx:
@@ -162,10 +99,10 @@ class TestTinplateClient(unittest.TestCase):
         fake_resp.read.return_value = json.dumps({"ok": True, "data": {"verdict": "allow"}}).encode("utf-8")
         fake_resp.__enter__.return_value = fake_resp
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            local_client.validate_vat(vat_number="DE123456789")
+            local_client.ssrf_firewall(url="https://example.com")
             payload = json.loads(mock_open.call_args[0][0].data.decode("utf-8"))
-            self.assertEqual(payload["vat_number"], "DE123456789")
-            self.assertNotIn("verify_vies", payload)
+            self.assertEqual(payload["url"], "https://example.com")
+            self.assertNotIn("check_dns", payload)
 
             local_client.guard_messages(messages=[{"role": "user", "content": "hi"}], redact_pii=True)
             msg_payload = json.loads(mock_open.call_args[0][0].data.decode("utf-8"))
@@ -397,27 +334,24 @@ class TestTinplateClient(unittest.TestCase):
                 secure.get_jwks()
             self.assertEqual(ctx.exception.code, "invalid_jwks")
 
-    def test_v116_per_call_receipts_workdays_and_sanitize_turn(self) -> None:
+    def test_v116_per_call_receipts_and_sanitize_turn(self) -> None:
         client = TinplateClient(api_key="tok_secret")
         fake_resp = MagicMock()
         fake_resp.status = 200
         fake_resp.headers = {}
-        fake_resp.read.return_value = json.dumps({"ok": True, "data": {"working_days": 5}}).encode("utf-8")
+        fake_resp.read.return_value = json.dumps({"ok": True, "data": {"safe": False}}).encode("utf-8")
         fake_resp.__enter__.return_value = fake_resp
         with patch("urllib.request.urlopen", return_value=fake_resp) as mock_open:
-            client.workdays_between(
-                country="HU",
-                start_date="2026-11-16",
-                end_date="2026-11-23",
-                include_start=False,
-                include_end=True,
+            client.analyze_regex_safety(
+                pattern="^(a+)+$",
+                flags="i",
                 receipt=True,
             )
             req = mock_open.call_args[0][0]
-            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/workday-holiday/between?receipt=true")
+            self.assertEqual(req.full_url, "https://api.tinplate.dev/v1/regex-safety?receipt=true")
             body = json.loads(req.data.decode("utf-8"))
-            self.assertEqual(body["include_start"], False)
-            self.assertEqual(body["include_end"], True)
+            self.assertEqual(body["pattern"], "^(a+)+$")
+            self.assertEqual(body["flags"], "i")
 
         in_ok = MagicMock()
         in_ok.status = 200

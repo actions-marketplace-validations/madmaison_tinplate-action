@@ -1,14 +1,14 @@
 # Security Policy
 
-Tinplate builds stateless security, guardrail, and EU/data validation micro-APIs. We welcome coordinated vulnerability reports from security researchers and users.
+Tinplate builds offline deterministic AI agent security and guardrail micro-APIs. We welcome coordinated vulnerability reports from security researchers and users.
 
 ## Supported Versions
 
 | Component | Version | Security Fixes |
 | --- | --- | --- |
-| Edge Gateway, Web Portal & SSRF Fetcher Workers | `1.0.56` | Active |
-| TypeScript SDK (`@tinplate/sdk`) | `1.1.9` | Active |
-| Python SDK (`tinplate`) | `1.1.9` | Active |
+| Edge Gateway, Web Portal & SSRF Fetcher Workers | `2.0.0` | Active |
+| TypeScript SDK (`@tinplate/sdk`) | `2.0.0` | Active |
+| Python SDK (`tinplate`) | `2.0.0` | Active |
 
 ## Reporting a Vulnerability
 
@@ -16,7 +16,7 @@ Please report security vulnerabilities **privately** via encrypted email or revi
 
 - Security Email: `security@tinplate.dev` (verified active; encrypt sensitive details using our PGP public key at https://tinplate.dev/.well-known/pgp-key.asc)
 - General / Enterprise Support: `support@tinplate.dev` (verified active; https://tinplate.dev/support)
-- Public GitHub Action & SDK Issue Tracker: https://github.com/madmaison/tinplate-action/issues (do **not** file security vulnerabilities publicly)
+- Public GitHub Action & SDK Issue Tracker: https://github.com/tinspace/tinplate-action/issues (do **not** file security vulnerabilities publicly)
 
 Our RFC 9116 disclosure metadata is published at:
 
@@ -30,4 +30,4 @@ When reporting an issue, please include:
 
 **Safe Harbour:** Tinplate supports coordinated vulnerability disclosure and will not pursue legal action for good-faith, non-destructive research that follows these guidelines.
 
-We aim to acknowledge reports within **1 business day** (best-effort target) and prioritize critical remediation as quickly as possible.
+Reports are handled on a **best-effort** basis (all services and support are provided as-is, best-effort, no SLA unless agreed in a written Business/Enterprise contract).

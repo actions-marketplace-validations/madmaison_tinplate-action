@@ -1,7 +1,7 @@
 {
   "name": "@tinplate/sdk",
-  "version": "1.1.10",
-  "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate 34-API AI Safety, Security, Omnibar NLP & Data Validation Edge Gateway.",
+  "version": "2.0.0",
+  "description": "Zero-dependency TypeScript & JavaScript SDK for the Tinplate Offline AI Agent Security & Guardrails Edge Gateway.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,10 +22,10 @@
   "homepage": "https://tinplate.dev/sdk",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/madmaison/tinplate-action.git"
+    "url": "git+https://github.com/tinspace/tinplate-action.git"
   },
   "bugs": {
-    "url": "https://github.com/madmaison/tinplate-action/issues",
+    "url": "https://github.com/tinspace/tinplate-action/issues",
     "email": "support@tinplate.dev"
   },
   "keywords": [
